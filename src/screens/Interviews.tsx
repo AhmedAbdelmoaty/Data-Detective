@@ -1,20 +1,7 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
-
-type InterviewChoice = {
-  id: string;
-  title: string;
-  tag: string;
-};
-
-type InterviewQ = {
-  id: string;
-  header: string;
-  question: string;
-  choices: InterviewChoice[];
-};
 
 export default function Interviews() {
   const navigate = useNavigate();
@@ -23,6 +10,18 @@ export default function Interviews() {
   const questions = CASE001.interviews;
   const answeredCount = Object.values(game.interviewAnswers).filter(Boolean).length;
   const canContinue = game.canEnterAnalysis; // interviewAnswersCount >= 2
+
+  const handleChoice = (
+    questionId: string,
+    choice: { id: string; timeCostMin: number; trustDelta: number },
+  ) => {
+    if (game.interviewAnswers[questionId] === choice.id) return;
+    game.applyInterviewChoiceEffects({
+      timeCostMin: choice.timeCostMin,
+      trustDelta: choice.trustDelta,
+    });
+    game.setInterviewAnswer(questionId, choice.id);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white">
@@ -47,6 +46,7 @@ export default function Interviews() {
         <div className="mt-8 space-y-6">
           {questions.map((q) => {
             const selected = game.interviewAnswers[q.id];
+            const selectedChoice = q.choices.find((c) => c.id === selected);
 
             return (
               <div
@@ -57,12 +57,15 @@ export default function Interviews() {
                   <div>
                     <h2 className="text-lg font-semibold">{q.header}</h2>
                     <p className="mt-1 text-sm text-white/70">{q.question}</p>
+                    <p className="mt-2 text-xs uppercase tracking-widest text-white/40">
+                      Investigation Thread
+                    </p>
                   </div>
 
                   <div className="text-xs text-white/60">
                     Selected:{" "}
                     <span className={selected ? "text-emerald-300" : "text-white/60"}>
-                      {selected ? selected : "—"}
+                      {selectedChoice ? selectedChoice.title : "—"}
                     </span>
                   </div>
                 </div>
@@ -70,10 +73,17 @@ export default function Interviews() {
                 <div className="mt-4 space-y-3">
                   {q.choices.map((c) => {
                     const active = selected === c.id;
+                    const unlocked =
+                      !c.requiresEvidenceIds ||
+                      c.requiresEvidenceIds.some((id) => game.hasEvidence(id));
+                    if (!unlocked) return null;
+
+                    const trustChip = `${c.trustDelta >= 0 ? "+" : ""}${c.trustDelta}`;
+
                     return (
                       <button
                         key={c.id}
-                        onClick={() => game.setInterviewAnswer(q.id, c.id)}
+                        onClick={() => handleChoice(q.id, c)}
                         className={`w-full rounded-2xl border px-5 py-4 text-left transition ${
                           active
                             ? "border-emerald-400/40 bg-emerald-400/10"
@@ -81,7 +91,16 @@ export default function Interviews() {
                         }`}
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <div className="font-semibold">{c.title}</div>
+                          <div>
+                            <div className="font-semibold">{c.title}</div>
+                            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70">
+                              <span className="rounded-full bg-white/10 px-2 py-1">-{c.timeCostMin} min</span>
+                              <span className="rounded-full bg-white/10 px-2 py-1">
+                                Trust {trustChip}
+                              </span>
+                            </div>
+                          </div>
+
                           <div className="text-xs text-white/60">{c.tag}</div>
                         </div>
                       </button>

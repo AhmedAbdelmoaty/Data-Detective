@@ -15,6 +15,7 @@ export type GameState = {
   // HUD
   time: string;
   trust: "Low" | "Medium" | "High";
+  trustScore: number;
   xp: number;
 
   // Evidence
@@ -37,8 +38,14 @@ export type GameState = {
 
   // Actions
   placeCard: (cardId: string, bucket: Bucket) => void;
+  getPlacedEvidenceIds: () => string[];
+  hasEvidence: (evidenceId: string) => boolean;
   runSql: () => void;
   setInterviewAnswer: (questionId: string, answerId: string) => void;
+  applyInterviewChoiceEffects: (opts: {
+    timeCostMin: number;
+    trustDelta: number;
+  }) => void;
   toggleInsight: (insightId: string, max?: number) => void;
 
   // Reset (support both names to avoid breaking any screen)
@@ -71,6 +78,7 @@ const GameCtx = createContext<GameState | null>(null);
 export function GameProvider({ children }: { children: React.ReactNode }) {
   // ✅ State
   const [time, setTime] = useState(INITIAL_TIME);
+  const [trustScore, setTrustScore] = useState(50);
   const [cards, setCards] = useState<EvidenceCard[]>(initialCards);
 
   const [sqlRan, setSqlRan] = useState(false);
@@ -101,9 +109,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const canEnterAnalysis = canEnterInterviews && interviewAnswersCount >= 2;
   const canReveal = canEnterAnalysis && selectedInsightsCount >= 2;
 
+  const trust: GameState["trust"] =
+    trustScore < 40 ? "Low" : trustScore < 70 ? "Medium" : "High";
+
   // ✅ one reset implementation used by both resetCase & resetGame
   const doReset = () => {
     setTime(INITIAL_TIME);
+    setTrustScore(50);
     setCards(initialCards.map((c) => ({ ...c, placedIn: null })));
     setSqlRan(false);
     setInterviewAnswers({});
@@ -114,7 +126,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     () => ({
       // HUD
       time,
-      trust: "Medium",
+      trust,
+      trustScore,
       xp: 75,
 
       // Evidence
@@ -153,6 +166,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setTime((t) => spendTime(t, 1));
       },
 
+      getPlacedEvidenceIds: () =>
+        cards.filter((c) => c.placedIn != null).map((c) => c.id),
+
+      hasEvidence: (evidenceId) =>
+        cards.some((c) => c.id === evidenceId && c.placedIn != null),
+
       runSql: () => setSqlRan(true),
 
       setInterviewAnswer: (questionId, answerId) => {
@@ -171,6 +190,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       },
 
+      applyInterviewChoiceEffects: ({ timeCostMin, trustDelta }) => {
+        setTime((t) => spendTime(t, timeCostMin));
+        setTrustScore((prev) => Math.min(100, Math.max(0, prev + trustDelta)));
+      },
+
       // both are valid now ✅
       resetCase: doReset,
       resetGame: doReset,
@@ -178,6 +202,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [
       time,
       cards,
+      trust,
+      trustScore,
       placedCount,
       sqlRan,
       interviewAnswers,

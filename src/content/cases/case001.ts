@@ -12,6 +12,9 @@ export type CaseInterviewChoice = {
   id: string;
   title: string;
   tag: string;
+  timeCostMin: number;
+  trustDelta: number;
+  requiresEvidenceIds?: string[];
 };
 
 export type CaseInterviewQuestion = {
@@ -82,13 +85,23 @@ export const CASE001 = {
           id: "pricing",
           title: "شكاوى عن الفواتير والخصومات",
           tag: "Pricing/Billing",
+          timeCostMin: 6,
+          trustDelta: 3,
         },
         {
           id: "checkout",
           title: "شكاوى عن أخطاء في الدفع",
           tag: "Checkout errors",
+          timeCostMin: 7,
+          trustDelta: -2,
         },
-        { id: "ads", title: "شكاوى عن الإعلانات", tag: "CAC/Conversion" },
+        {
+          id: "ads",
+          title: "شكاوى عن الإعلانات",
+          tag: "CAC/Conversion",
+          timeCostMin: 5,
+          trustDelta: -1,
+        },
       ],
     },
     {
@@ -100,10 +113,27 @@ export const CASE001 = {
           id: "search_budget",
           title: "زودنا الميزانية على Search",
           tag: "CPC ↑",
+          timeCostMin: 8,
+          trustDelta: -2,
+          requiresEvidenceIds: ["paid_ads_cpc"],
         },
         // ✅ نخلي IDs دي قياسية: landing / quality
-        { id: "landing", title: "غيّرنا Landing Page", tag: "Conversion ↓" },
-        { id: "quality", title: "غيّرنا targeting", tag: "Quality ↓" },
+        {
+          id: "landing",
+          title: "غيّرنا Landing Page",
+          tag: "Conversion ↓",
+          timeCostMin: 6,
+          trustDelta: -1,
+          requiresEvidenceIds: ["lp_conv_down"],
+        },
+        {
+          id: "quality",
+          title: "غيّرنا targeting",
+          tag: "Quality ↓",
+          timeCostMin: 6,
+          trustDelta: 2,
+          requiresEvidenceIds: ["feature_adoption"],
+        },
       ],
     },
   ] as const,
