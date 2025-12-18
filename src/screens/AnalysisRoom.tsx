@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 type Insight = {
   id: string;
   title: string;
@@ -40,6 +41,10 @@ export default function AnalysisRoom() {
           >
             Back to HQ
           </button>
+        </div>
+
+        <div className="mt-4">
+          <InvestigationProgress current="analysis" />
         </div>
 
         <div className="mt-8 space-y-4">
