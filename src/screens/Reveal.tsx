@@ -236,7 +236,17 @@ export default function Reveal() {
   };
 
   const ending = pickEnding();
-
+  const evidenceCompleteness = game.cluesGoal
+    ? game.placedCount / game.cluesGoal
+    : 0;
+  const evidenceConfidence: Ending["confidenceLabel"] =
+    ending.key === "mixed_signals"
+      ? "Low"
+      : game.placedCount >= 4
+        ? "High"
+        : game.placedCount >= 3
+          ? "Medium"
+          : "Low";
   // ---- UI ----
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
@@ -261,7 +271,7 @@ export default function Reveal() {
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">{ending.title}</h2>
             <span className="rounded-full border border-slate-700 bg-slate-900/40 px-3 py-1 text-xs text-slate-200">
-              Confidence: {ending.confidenceLabel}
+              Confidence: {evidenceConfidence}
             </span>
           </div>
 
@@ -306,7 +316,9 @@ export default function Reveal() {
               <div className="mt-1">
                 <b>Placed Evidence:</b> {placed.length}/{game.cluesGoal}
               </div>
-
+              <div className="mt-1">
+                <b>Evidence completeness:</b> {Math.round(evidenceCompleteness * 100)}%
+              </div>
               {/* Debug scores (مفيدة حاليًا) */}
               <div className="mt-3 text-xs text-slate-400">
                 Scores → pricing:{score.pricing} | checkout:{score.checkout} |

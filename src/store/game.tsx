@@ -192,7 +192,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       applyInterviewChoiceEffects: ({ timeCostMin, trustDelta }) => {
         setTime((t) => spendTime(t, timeCostMin));
-        setTrustScore((prev) => Math.min(100, Math.max(0, prev + trustDelta)));
+        setTrustScore((prev) =>
+          Math.min(100, Math.max(0, prev + trustDelta * 10)),
+        );
       },
 
       // both are valid now ✅
