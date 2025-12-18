@@ -32,6 +32,10 @@ export default function HQ() {
   const game = useGame();
   const nav = useNavigate();
 
+  const remainingForSQL = Math.max(3 - game.placedCount, 0);
+  const remainingForAnalysis = Math.max(2 - game.interviewAnswersCount, 0);
+  const remainingForReveal = Math.max(2 - game.selectedInsightsCount, 0);
+
   return (
     <main className="min-h-screen px-6 py-10">
       <div className="max-w-5xl mx-auto">
@@ -77,25 +81,41 @@ export default function HQ() {
           />
           <Card
             title="SQL Lab"
-            subtitle="استعلامات تكشف الحقيقة"
+            subtitle={
+              remainingForSQL > 0
+                ? `عايز ${remainingForSQL} Clues علشان SQL يتفتح`
+                : "استعلامات تكشف الحقيقة — مفتوح"
+            }
             to="/sql"
             tag="Query"
           />
           <Card
             title="Analysis Room"
-            subtitle="Dashboards & KPIs"
+            subtitle={
+              game.canEnterAnalysis
+                ? "Dashboards & KPIs — جاه"
+                : `جاوب على ${remainingForAnalysis} أسئلة كمان في Interviews`
+            }
             to="/analysis"
             tag="Insight"
           />
           <Card
             title="Interviews"
-            subtitle="حوارات تفتح مسارات"
+            subtitle={
+              game.canEnterInterviews
+                ? "حوارات تفتح مسارات — مفتوح"
+                : "اعمل Run Query في SQL Lab الأول"
+            }
             to="/interviews"
             tag="Choices"
           />
           <Card
             title="Reveal"
-            subtitle="اقفل القضية (يتفتح في النهاية)"
+            subtitle={
+              game.canReveal
+                ? "اقفل القضية"
+                : `اختار ${remainingForReveal} Insights كمان علشان يتفتح`
+            }
             to="/reveal"
             tag="Locked"
           />
