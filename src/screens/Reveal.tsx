@@ -1,7 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
-import { CASE001 } from "../content/cases/case001";
+import {
+  CASE001,
+  type CaseEvidence,
+  type CaseInsight,
+  type CaseInterviewQuestion,
+  type CaseInterviewChoice,
+} from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 
 type EndingKey =
   | "pricing_backlash"
@@ -26,11 +33,14 @@ export default function Reveal() {
   const game = useGame();
   const nav = useNavigate();
   const caseData = CASE001;
+  const evidenceLibrary = caseData.evidence as ReadonlyArray<CaseEvidence>;
+  const insightLibrary = caseData.insights as ReadonlyArray<CaseInsight>;
+  const interviewQuestions = caseData.interviews as ReadonlyArray<CaseInterviewQuestion>;
   const signalLabels: Record<Signal, string> = {
-    pricing: "Pricing/Billing",
-    checkout: "Checkout/Payments",
-    marketing: "Marketing",
-    product: "Product",
+    pricing: "تسعير/فوترة",
+    checkout: "دفع/Checkout",
+    marketing: "تسويق",
+    product: "منتج",
   };
 
   // ---- Gather run data ----
@@ -71,7 +81,7 @@ export default function Reveal() {
         bump("marketing", 2);
         break;
 
-      case "adoption_drop":
+      case "feature_adoption":
         bump("product", 4);
         break;
 
@@ -129,18 +139,18 @@ export default function Reveal() {
     if (pricingHigh && checkoutHigh) {
       return {
         key: "pricing_plus_checkout",
-        title: "Root Cause: Pricing backlash + Checkout friction",
+        title: "السبب: تسعير أربك + أخطاء دفع",
         confidenceLabel: "High",
         summary:
-          "في إشارات قوية على مشكلتين مرتبطتين بالإيرادات: تسعير/فواتير عملت رد فعل سلبي + أخطاء/احتكاك في الدفع زوّد الفشل والـ refunds.",
+          "الإيراد نازل بسبب عاملين: رسالة تسعير أربكت العملاء + أخطاء Checkout 504 تعطل الدفع.",
         why: [
-          "Refunds/Complaints ظهرت بقوة (Pricing/Billing).",
-          "Checkout errors ظهرت بقوة ومرتبطة بهبوط الإيرادات.",
+          "Refunds وشكاوى التسعير مرتفعة بوضوح.",
+          "أخطاء الدفع 504 ارتفعت مع نفس فترة الهبوط.",
         ],
         nextActions: [
-          "Fix عاجل لمسار الدفع (monitoring + error budget + rollback/patch).",
-          "مراجعة تغييرات التسعير + توضيح الرسالة + سياسة refunds/discounts.",
-          "A/B على pricing page + FAQ + تحسين onboarding للتغييرات.",
+          "إصلاح عاجل لمسار الدفع + مراقبة فورية.",
+          "توضيح الرسائل والأسعار في صفحة التسعير والـ FAQ.",
+          "مراجعة الخصومات / الاستردادات مع فريق الفوترة.",
         ],
       };
     }
@@ -150,18 +160,18 @@ export default function Reveal() {
       if (top.k === "pricing") {
         return {
           key: "pricing_backlash",
-          title: "Root Cause: Pricing change backlash",
+          title: "السبب: اعتراض على التسعير",
           confidenceLabel: "High",
           summary:
-            "الانخفاض مرتبط برد فعل سلبي بعد تغييرات التسعير: شكاوى أعلى + refunds أعلى → retention أقل وإيراد أقل.",
+            "الهبوط مرتبط بتغيير أسعار أحدث رد فعل سلبي: شكاوى + Refunds ↑.",
           why: [
-            "Signals قوية في refunds/complaints مرتبطة بالتسعير.",
-            "اختياراتك (Insights/Interviews) دعمت سيناريو التسعير.",
+            "شكاوى التسعير وRefunds في القمة.",
+            "الإشارات الأخرى أقل وزنًا من مسار التسعير.",
           ],
           nextActions: [
-            "مراجعة خطة التسعير الجديدة + سياسة refunds/discounts.",
-            "تحسين messaging على pricing page + FAQ.",
-            "تقسيم العملاء (segments) لمعرفة أكتر شريحة تضررت.",
+            "راجع التغيير الأخير في الأسعار مع فريق الفوترة.",
+            "وضح الرسالة في صفحة الأسعار وأرسل FAQ مختصر.",
+            "تابع شريحة العملاء المتضررة وحدد التعويض.",
           ],
         };
       }
@@ -169,18 +179,18 @@ export default function Reveal() {
       if (top.k === "checkout") {
         return {
           key: "checkout_errors",
-          title: "Root Cause: Checkout errors (504) blocking payments",
+          title: "السبب: أعطال Checkout 504",
           confidenceLabel: "High",
           summary:
-            "هبوط الإيرادات سببه الرئيسي أخطاء في الدفع (Checkout 504) بتقلل التحويل وتزود فشل عمليات الدفع.",
+            "أخطاء 504 في الدفع تعطل التحويلات وترفع الفشل، متزامنة مع الهبوط.",
           why: [
-            "Evidence قوي عن checkout_504_errors.",
-            "الربط مع revenue drop واضح داخل الـ prototype.",
+            "زيادة واضحة في checkout_504_errors.",
+            "الهبوط في الإيراد متزامن مع ارتفاع الأخطاء.",
           ],
           nextActions: [
-            "إصلاح الـ 504 (logs + tracing + provider status + rollback).",
-            "إضافة monitoring/alerts لمعدل فشل الدفع.",
-            "تحسين تجربة retry + graceful fallback أثناء الأعطال.",
+            "جمع الـ logs وتتبع مزود الدفع، طبق rollback أو patch سريع.",
+            "أضف مراقبة Alerts لمعدل فشل الدفع.",
+            "فعّل تجربة retry بسيطة للعملاء أثناء العطل.",
           ],
         };
       }
@@ -188,18 +198,18 @@ export default function Reveal() {
       if (top.k === "marketing") {
         return {
           key: "marketing_efficiency",
-          title: "Root Cause: Marketing efficiency drop (CPC↑ / CVR↓)",
+          title: "السبب: كفاءة تسويق ضعفت",
           confidenceLabel: "High",
           summary:
-            "السبب الأقرب: تكلفة الاكتساب زادت أو جودة الترافيك قلت أو صفحة الهبوط اتأثرت → conversion down.",
+            "الترافيك أو الرسالة التسويقية أصبحت أضعف: CPC ↑ أو Conversion ↓ بعد تغيير الحملات.",
           why: [
-            "Signals قوية مرتبطة بـ CPC / Conversion / Landing.",
-            "اختيارات interviews تميل للتسويق/الترافيك.",
+            "إشارات CPC/Conversion مسيطرة.",
+            "اختيارات المقابلات تدعم مسار التسويق.",
           ],
           nextActions: [
-            "مراجعة القنوات (targeting/creative) + quality checks.",
-            "تحليل landing page funnel + session recordings.",
-            "إعادة توزيع الميزانية للأفضل أداءً + negative keywords إن لزم.",
+            "راجع التارجتنج والـ creative واكشف انخفاض الجودة.",
+            "افحص landing page funnel بسرعة (session recordings).",
+            "حرك الميزانية نحو القنوات الأقل تكلفة/أفضل تحويل.",
           ],
         };
       }
@@ -207,18 +217,18 @@ export default function Reveal() {
       if (top.k === "product") {
         return {
           key: "product_regression",
-          title: "Root Cause: Product regression after update",
+          title: "السبب: تراجع منتج بعد تحديث",
           confidenceLabel: "High",
           summary:
-            "هبوط الاستخدام/التبني بعد تحديث أو تغيير في المنتج أثر على القيمة وبالتالي الإيرادات.",
+            "تحديث المنتج أضعف التبني والاستخدام، فقلّت القيمة والإيرادات.",
           why: [
-            "Signals قوية في adoption/usage drop.",
-            "تصنيف الأدلة اتجه للمنتج بشكل واضح.",
+            "إشارات انخفاض استخدام/تبني واضحة.",
+            "تصنيف الأدلة يميل للمنتج.",
           ],
           nextActions: [
-            "مراجعة آخر release + feature flags + rollback إن لزم.",
-            "تحليل cohorts قبل/بعد التحديث.",
-            "جمع feedback نوعي من العملاء المتأثرين.",
+            "راجع آخر Release والـ feature flags، حضر rollback.",
+            "قارن سلوك العملاء قبل/بعد التغيير.",
+            "اجمع Feedback سريع من العملاء المتأثرين.",
           ],
         };
       }
@@ -228,10 +238,10 @@ export default function Reveal() {
     // لو الدرجات متقاربة أو ضعيفة: نعرض نهاية بديلة واضحة بدل ما ندي سبب غلط
     return {
       key: "mixed_signals",
-      title: "Root Cause: Mixed signals (needs more evidence)",
+      title: "الإشارات متداخلة (تحتاج أدلة إضافية)",
       confidenceLabel: "Low",
       summary:
-        "الإشارات متقاربة بين أكتر من مسار، فمش آمن نحدد سبب واحد نهائي. محتاج تجمع أدلة إضافية أو تختار insights/answers بشكل أوضح.",
+        "المسارات قريبة من بعض. غير آمن إعلان سبب واحد. اجمع دليل أو إجابة أدق.",
       why: [
         "الـ signals متوزعة ومفيش مسار متفوق بشكل كافي.",
         "ده أفضل من إجابة نهائية غلط.",
@@ -263,6 +273,37 @@ export default function Reveal() {
       : evidenceConfidence === "Medium"
         ? "الاتجاه الأقوى ظاهر لكن لسه في فجوات بسيطة (أدلة أقل من المطلوب أو إشارات قريبة في المسار التاني)."
         : "الثقة منخفضة: الإشارات متقاربة أو البيانات ناقصة. النتيجة هنا أفضل تخمين، وليست حكم نهائي.";
+  const confidenceLabelAr: Record<Ending["confidenceLabel"], string> = {
+    High: "عالية",
+    Medium: "متوسطة",
+    Low: "منخفضة",
+  };
+
+  const evidenceTitleMap = new Map(evidenceLibrary.map((e) => [e.id, e.title]));
+  const insightTitleMap = new Map(insightLibrary.map((i) => [i.id, i.title]));
+  const interviewChoiceLines = Object.entries(interviewAnswers).map(
+    ([questionId, choiceId]) => {
+      const question = interviewQuestions.find((q) => q.id === questionId);
+      const choiceList = question?.choices as CaseInterviewChoice[] | undefined;
+      const choice = choiceList?.find((c) => c.id === choiceId);
+      return choice ? `${question?.header}: ${choice.title}` : `${questionId}: ${choiceId}`;
+    },
+  );
+  const evidenceTitles = placed
+    .map((c) => evidenceTitleMap.get(c.id) ?? c.title ?? c.id)
+    .filter(Boolean);
+  const insightTitles = insights
+    .map((id) => insightTitleMap.get(id as CaseInsight["id"]) ?? id)
+    .filter(Boolean);
+  const supportingEvidenceLines = [
+    ...ending.why,
+    `الأدلة الموضوعة: ${evidenceTitles.length ? evidenceTitles.join("، ") : "لا يوجد"}.`,
+    `Insights: ${insightTitles.length ? insightTitles.join("، ") : "لا يوجد"}.`,
+    `إجابات المقابلات: ${
+      interviewChoiceLines.length ? interviewChoiceLines.join(" | ") : "لا يوجد"
+    }.`,
+    `أعلى مسار نقاط: ${signalLabels[top.k]} (${top.v}) ثم ${signalLabels[second.k]} (${second.v}).`,
+  ];
 
   const tightenList: string[] = [];
   if (!game.sqlRan) tightenList.push("ارجع لـ SQL Lab وشغّل الاستعلام علشان تعزل السبب (checkout vs pricing vs marketing).");
@@ -299,11 +340,15 @@ export default function Reveal() {
           </button>
         </div>
 
+        <div className="mt-4">
+          <InvestigationProgress current="reveal" />
+        </div>
+
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-6 shadow-xl">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-semibold">{ending.title}</h2>
             <span className="rounded-full border border-slate-700 bg-slate-900/40 px-3 py-1 text-xs text-slate-200">
-              Confidence: {evidenceConfidence}
+              الثقة: {confidenceLabelAr[evidenceConfidence]}
             </span>
           </div>
 
@@ -311,8 +356,8 @@ export default function Reveal() {
           <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
             <div className="text-xs uppercase tracking-widest text-emerald-200">Detective conclusion</div>
             <p className="mt-2 text-slate-200">
-              السبب الأكثر ترجيحًا مبني على إشارات {signalLabels[top.k]} مدعومة بقراراتك في الأدلة والـ SQL والـ interviews.
-              {signalGap < 3 ? " المسار التاني قريب، لكن الأدلة تميل ناحية المتهم الحالي." : ""}
+              المتهم الأقوى: {signalLabels[top.k]}. الأدلة، الـ SQL، والمقابلات كلها تميل لنفس المسار.
+              {signalGap < 3 ? " المسار التالي قريب؛ راقب الفارق." : ""}
             </p>
           </div>
 
@@ -322,12 +367,9 @@ export default function Reveal() {
               السردية مستندة إلى خط الأدلة التالي: نتائج SQL، وضع الأدلة في الـ board، وإجابات المقابلات.
             </p>
             <ul className="mt-3 list-disc space-y-1 pl-5 text-slate-300">
-              {ending.why.map((x) => (
+              {supportingEvidenceLines.map((x) => (
                 <li key={x}>{x}</li>
               ))}
-              <li>
-                أكتر مسار سجل نقاط: {signalLabels[top.k]} ({top.v}) → التالي: {signalLabels[second.k]} ({second.v}).
-              </li>
             </ul>
           </div>
 

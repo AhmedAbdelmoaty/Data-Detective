@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 
 type ResultRow = { metric: string; value: string };
 
@@ -16,28 +17,17 @@ export default function SQLLab() {
   );
 
   const results: ResultRow[] = useMemo(() => {
-    if (caseData.sqlResultHighlights?.length) {
-      return [
-        { metric: "checkout_504_errors", value: "+38%" },
-        { metric: "refunds", value: "+22%" },
-        { metric: "revenue", value: "-18%" },
-      ];
-    }
-
     return [
       { metric: "checkout_504_errors", value: "+38%" },
       { metric: "refunds", value: "+22%" },
       { metric: "revenue", value: "-18%" },
     ];
-  }, [caseData.sqlResultHighlights]);
+  }, []);
 
   const canContinue = game.canEnterInterviews; // = canEnterSQL && sqlRan
   const showResults = game.sqlRan;
-  const interviewPrep = [
-    "اسأل دعم العملاء: هل الـ refunds مرتبطة بتسعير أم بأخطاء دفع؟",
-    "اسأل Growth: هل الترافيك أو الـ landing page زودت الاحتكاك أم المشكلة تقنية بحتة؟",
-    "لو checkout هو المتهم الرئيسي، اطلب سجل الأعطال وخطة rollback قبل ما يضيع أسبوع كمان.",
-  ];
+  const interviewPrep = caseData.sqlInterviewPrep;
+  const sqlTable = caseData.sqlResultTable;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white">
@@ -62,9 +52,13 @@ export default function SQLLab() {
           </button>
         </div>
 
+        <div className="mt-4">
+          <InvestigationProgress current="sql" />
+        </div>
+
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-white/90">Query Editor</h2>
+            <h2 className="text-sm font-semibold text-white/90">محرر الاستعلام</h2>
             <div className="text-xs text-white/60">
               SQL:{" "}
               <span className={game.sqlRan ? "text-emerald-300" : "text-white/60"}>
@@ -88,7 +82,7 @@ export default function SQLLab() {
               onClick={() => game.runSql()}
               className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-black hover:bg-white/90"
             >
-              Run Query
+              شغّل الاستعلام
             </button>
 
             <button
@@ -121,14 +115,14 @@ export default function SQLLab() {
             الاستعلام ده بيكشف اتجاه واضح قبل ما تواجه الناس.
           </p>
           <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-3 text-xs text-white/70">
-            الاستعلام مكتوب بالكامل: راجع النتائج بدل ما تضيع وقت في تركيب syntax.
+            الاستعلام مكتوب بالكامل: راجع النتائج بدل ما تضيع وقت في تركيب syntax. شغّل Run Query ثم انقل الأسئلة للـ interviews.
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white/90">
-              Results (Prototype)
+              النتائج (تجريبية)
             </h3>
             <span className="text-xs text-white/60">
               {showResults ? "Query executed" : "Run Query to reveal"}
@@ -137,28 +131,36 @@ export default function SQLLab() {
 
           {showResults ? (
             <>
-              <div className="mt-4 overflow-hidden rounded-xl border border-white/10">
-                <table className="min-w-full divide-y divide-white/10 text-sm">
-                  <thead className="bg-black/40 text-white/70">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-semibold">Metric</th>
-                      <th className="px-4 py-3 text-left font-semibold">Change vs baseline</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/10 bg-black/20">
-                    {results.map((r) => (
-                      <tr key={r.metric} className="text-white/90">
-                        <td className="px-4 py-3 font-mono">{r.metric}</td>
-                        <td className="px-4 py-3">{r.value}</td>
+              {sqlTable && (
+                <div className="mt-4 overflow-hidden rounded-xl border border-white/10">
+                  <table className="min-w-full divide-y divide-white/10 text-sm">
+                    <thead className="bg-black/40 text-white/70">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-semibold">الأسبوع</th>
+                        <th className="px-4 py-3 text-left font-semibold">الإيراد</th>
+                        <th className="px-4 py-3 text-left font-semibold">Checkout 504</th>
+                        <th className="px-4 py-3 text-left font-semibold">Refunds</th>
+                        <th className="px-4 py-3 text-left font-semibold">نسبة الفشل</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-white/10 bg-black/20">
+                      {sqlTable.map((row) => (
+                        <tr key={row.week} className="text-white/90">
+                          <td className="px-4 py-3">{row.week}</td>
+                          <td className="px-4 py-3 font-mono">{row.revenue}</td>
+                          <td className="px-4 py-3 font-mono">{row.errors}</td>
+                          <td className="px-4 py-3 font-mono">{row.refunds}</td>
+                          <td className="px-4 py-3 font-mono">{row.failureShare}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-sm text-white/90">
                 <div className="text-xs uppercase tracking-widest text-emerald-200">
-                  What the data shows
+                  ماذا تقول البيانات؟
                 </div>
                 <ul className="mt-2 list-disc space-y-2 pl-5 text-white/80">
                   {(caseData.sqlResultHighlights ?? results.map((r) => `${r.metric}: ${r.value}`)).map(
@@ -176,10 +178,10 @@ export default function SQLLab() {
               <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-widest text-white/50">What this tells us → Interviews</div>
                 <p className="mt-2 text-sm text-white/80">
-                  الاستعلام ده يجهز أسئلتك: أربط بين التسعير والأخطاء التقنية علشان تطلع إجابة مقنعة.
+                  الأسئلة التالية ترفع الثقة وتحدد المتهم الرئيسي:
                 </p>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-white/75">
-                  {interviewPrep.map((item) => (
+                  {interviewPrep?.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>

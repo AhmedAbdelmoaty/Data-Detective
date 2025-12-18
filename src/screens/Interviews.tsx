@@ -6,6 +6,7 @@ import {
   type CaseInterviewChoice,
   type CaseInterviewQuestion,
 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 
 export default function Interviews() {
   const navigate = useNavigate();
@@ -52,6 +53,10 @@ export default function Interviews() {
           >
             Back to HQ
           </button>
+        </div>
+
+        <div className="mt-4">
+          <InvestigationProgress current="interviews" />
         </div>
 
         <div className="mt-8 space-y-6">

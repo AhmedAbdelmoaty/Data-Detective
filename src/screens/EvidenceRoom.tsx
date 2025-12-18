@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 
 export default function EvidenceRoom() {
   const navigate = useNavigate();
@@ -59,6 +60,10 @@ export default function EvidenceRoom() {
               Continue → SQL Lab
             </Link>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <InvestigationProgress current="evidence" />
         </div>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-4">
