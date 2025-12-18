@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 function Card({
   title,
   subtitle,
@@ -60,8 +61,8 @@ export default function HQ() {
             </div>
             <h1 className="mt-2 text-3xl font-bold">Choose your next move</h1>
             <p className="mt-2 text-white/70">
-              HQ = غرفة العمليات. كل غرفة ليها هدف واضح وتكلفة Time/Trust.
-              انتقي الحركة اللي تقرّبك لسبب واحد واضح.
+              HQ = غرفة العمليات. تعرف هنا الدور، المشكلة، والخطوة الجاية في
+              التحقيق.
             </p>
           </div>
 
@@ -71,6 +72,10 @@ export default function HQ() {
           >
             ← Back
           </button>
+        </div>
+
+        <div className="mt-4">
+          <InvestigationProgress current="hq" />
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -85,6 +90,16 @@ export default function HQ() {
             </div>
 
           </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+          <div className="font-semibold">الملخص السريع</div>
+          <ul className="mt-2 space-y-1 list-disc pl-5">
+            <li>الدور: محقق بيانات للـ CFO.</li>
+            <li>المشكلة: Revenue -18% هذا الأسبوع.</li>
+            <li>الفوز: سبب واحد + خطوتين تنفيذ واضحتين.</li>
+            <li>الخريطة: HQ → Evidence → SQL → Interviews → Analysis → Reveal.</li>
+          </ul>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">

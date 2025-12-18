@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { CASE001 } from "../content/cases/case001";
+import { InvestigationProgress } from "../components/InvestigationProgress";
 
 export default function Intro() {
   const nav = useNavigate();
@@ -14,17 +15,13 @@ export default function Intro() {
               Modern Startup Thriller
             </div>
             <h1 className="mt-2 text-4xl font-bold">Data Detective</h1>
-            <p className="mt-3 text-white/75 leading-relaxed">
-              {briefing.role}
-              <br />
-              المشكلة: Revenue نازل 18% فجأة.
-              <br />
-              المخاطرة: {briefing.stakes}
-              <br />
-              {briefing.pressure}
-              <br />
-              الفوز: {briefing.win}
-            </p>
+            <div className="mt-4 space-y-2 text-white/80 text-sm">
+              <div>• الدور: {briefing.role}</div>
+              <div>• المشكلة: الإيراد نازل 18% فجأة.</div>
+              <div>• المخاطرة: {briefing.stakes}</div>
+              <div>• الضغط: {briefing.pressure}</div>
+              <div>• الفوز: {briefing.win}</div>
+            </div>
           </div>
 
           <div className="text-right text-xs text-white/70 rounded-xl border border-white/10 bg-black/30 px-3 py-2">
@@ -52,6 +49,10 @@ export default function Intro() {
               Evidence → SQL → Interviews → Analysis → Reveal
             </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <InvestigationProgress current="hq" />
         </div>
 
         <div className="mt-6 flex items-center gap-3">
