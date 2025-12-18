@@ -26,6 +26,12 @@ export default function Reveal() {
   const game = useGame();
   const nav = useNavigate();
   const caseData = CASE001;
+  const signalLabels: Record<Signal, string> = {
+    pricing: "Pricing/Billing",
+    checkout: "Checkout/Payments",
+    marketing: "Marketing",
+    product: "Product",
+  };
 
   // ---- Gather run data ----
   const placed = game.cards.filter((c) => c.placedIn);
@@ -113,6 +119,7 @@ export default function Reveal() {
 
   const hasStrong = top.v >= 8; // threshold
   const clearlyAhead = top.v - second.v >= 3;
+  const signalGap = top.v - second.v;
 
   const pricingHigh = score.pricing >= 7;
   const checkoutHigh = score.checkout >= 7;
@@ -249,6 +256,24 @@ export default function Reveal() {
         : game.placedCount >= 3
           ? "Medium"
           : "Low";
+
+  const confidenceReason =
+    evidenceConfidence === "High"
+      ? "أنت جمعت معظم الأدلة، شغّلت SQL، وأجوبة الـ Interviews دعمت نفس الاتجاه. الفارق بين المسارات واضح."
+      : evidenceConfidence === "Medium"
+        ? "الاتجاه الأقوى ظاهر لكن لسه في فجوات بسيطة (أدلة أقل من المطلوب أو إشارات قريبة في المسار التاني)."
+        : "الثقة منخفضة: الإشارات متقاربة أو البيانات ناقصة. النتيجة هنا أفضل تخمين، وليست حكم نهائي.";
+
+  const tightenList: string[] = [];
+  if (!game.sqlRan) tightenList.push("ارجع لـ SQL Lab وشغّل الاستعلام علشان تعزل السبب (checkout vs pricing vs marketing).");
+  if (game.placedCount < game.cluesGoal)
+    tightenList.push(`كمّل الأدلة في Evidence Room (${game.placedCount}/${game.cluesGoal}) علشان توزن المسارات.`);
+  if (insights.length < 2) tightenList.push("اختر Insight إضافي يساند الاتجاه الأقوى (pricing / checkout / cpc).");
+  if (Object.keys(interviewAnswers).length < 2)
+    tightenList.push("جاوب أسئلة Interviews بإجابات حادة تكشف السبب الرئيسي بدل إشارات عامة.");
+  if (signalGap > 0 && signalGap < 3)
+    tightenList.push("الإشارات متقاربة بين مسارين؛ ركز أسئلتك القادمة على مسار واحد لتوضيح الفارق.");
+  const showTighten = evidenceConfidence === "Low";
   // ---- UI ----
   return (
     <div className="min-h-screen w-full bg-gradient-to-b from-slate-950 via-slate-900 to-black text-slate-100">
@@ -283,26 +308,38 @@ export default function Reveal() {
           </div>
 
           <p className="mt-3 text-slate-300">{ending.summary}</p>
+          <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
+            <div className="text-xs uppercase tracking-widest text-emerald-200">Detective conclusion</div>
+            <p className="mt-2 text-slate-200">
+              السبب الأكثر ترجيحًا مبني على إشارات {signalLabels[top.k]} مدعومة بقراراتك في الأدلة والـ SQL والـ interviews.
+              {signalGap < 3 ? " المسار التاني قريب، لكن الأدلة تميل ناحية المتهم الحالي." : ""}
+            </p>
+          </div>
 
           <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 text-sm text-slate-200">
-            <div className="font-semibold">What this means</div>
+            <div className="font-semibold">Supporting evidence</div>
             <p className="mt-1 text-slate-300">
-              ده تفسير تنفيذي مختصر: النتيجة هنا هي السردية الأقرب بناءً على الأدلة اللي جمعتها والـ Insights اللي اخترتها.
+              السردية مستندة إلى خط الأدلة التالي: نتائج SQL، وضع الأدلة في الـ board، وإجابات المقابلات.
             </p>
-            <div className="mt-3 font-semibold">What to do next if confidence is Low</div>
-            <p className="mt-1 text-slate-300">
-              لو الثقة Low، ارجع زوّد Clues في Evidence، شغّل استعلام أوضح في SQL، وجاوب أسئلة Interviews تدعم مسار واحد ثم اختَر Insights تعززه.
-            </p>
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-slate-300">
+              {ending.why.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+              <li>
+                أكتر مسار سجل نقاط: {signalLabels[top.k]} ({top.v}) → التالي: {signalLabels[second.k]} ({second.v}).
+              </li>
+            </ul>
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
-              <div className="text-sm font-semibold text-slate-200">Why</div>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">
-                {ending.why.map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
-              </ul>
+              <div className="text-sm font-semibold text-slate-200">Confidence rationale</div>
+              <p className="mt-2 text-sm text-slate-300">{confidenceReason}</p>
+              {signalGap > 0 && (
+                <p className="mt-2 text-xs text-slate-400">
+                  الفارق بين المسار الأول والثاني: {signalGap} نقاط.
+                </p>
+              )}
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
@@ -316,6 +353,22 @@ export default function Reveal() {
               </ul>
             </div>
           </div>
+
+          {showTighten && (
+            <div className="mt-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+              <div className="text-sm font-semibold text-amber-100">
+                الثقة Low — خطوات محددة لرفعها
+              </div>
+              <p className="mt-2 text-sm text-amber-50/90">
+                النتيجة الحالية مؤقتة. خذ خطوة واحدة من القائمة لزيادة الثقة قبل ما تعرض التقرير.
+              </p>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-amber-50/90">
+                {tightenList.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/30 p-4">
             <div className="text-sm font-semibold text-slate-200">

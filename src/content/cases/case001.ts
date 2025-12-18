@@ -61,6 +61,15 @@ export const CASE001 = {
     "كل محاولة Place بتاخد وقت (تنسيق فرق/جلب بيانات). التسرع بيدفع Time زيادة.",
   sqlFrame:
     "الاستعلام هنا هدفه يكشف لو المشكلة في الدفع أو التسويق أو الفوترة. أنت بتدور على نمط يربط الـ drop بمسار واحد.",
+  sqlQuery:
+    "WITH weekly AS (\n  SELECT\n    DATE_TRUNC('week', paid_at) AS week,\n    SUM(amount_usd) AS revenue,\n    SUM(CASE WHEN status = 'failed' AND error_code = '504' THEN 1 ELSE 0 END) AS checkout_504_errors,\n    SUM(CASE WHEN refunded = TRUE THEN 1 ELSE 0 END) AS refunds\n  FROM payments\n  WHERE paid_at >= NOW() - INTERVAL '8 weeks'\n  GROUP BY 1\n)\nSELECT\n  week,\n  revenue,\n  checkout_504_errors,\n  refunds,\n  ROUND(100.0 * checkout_504_errors / NULLIF(checkout_504_errors + refunds + 1, 0), 1) AS failure_share_pct\nFROM weekly\nORDER BY week DESC;",
+  sqlResultHighlights: [
+    "معدل checkout_504_errors زاد +38% في آخر أسبوعين مقارنة بالمتوسط.",
+    "Refunds ارتفعت +22% في نفس الفترة، غالبًا بسبب ارتباك تسعير/خصومات.",
+    "إيراد الأسبوع الحالي أقل -18% من baseline، متوافق مع spike في الأخطاء.",
+  ],
+  sqlResultNarrative:
+    "البيانات بتقول إن مسار الدفع فيه اختناق حقيقي (504 errors) وفي نفس الوقت العملاء بيرجعوا يطلبوا Refunds بسبب التسعير الجديد. الاتجاه واضح ناحية الدفع + التسعير، وده يحضّر أسئلة الـ Interviews: هل المشكلة تقنية بس ولا في رسالة التسعير؟",
   interviewFrame:
     "Trust = استعداد الفريق يفتح لك دفاتر وأسرار. قراراتك ممكن تكسبهم أو تخليهم يقفلوا الباب.",
   analysisFrame:
