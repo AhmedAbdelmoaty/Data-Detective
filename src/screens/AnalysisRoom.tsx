@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import { CASE001 } from "../content/cases/case001";
@@ -13,6 +13,7 @@ export default function AnalysisRoom() {
   const game = useGame();
 
   const insights = CASE001.insights;
+  const frameCopy = CASE001.analysisFrame;
 
   const pickedCount = game.selectedInsights.length;
   const canContinue = game.canReveal; // selectedInsightsCount>=2 && canEnterAnalysis
@@ -27,6 +28,10 @@ export default function AnalysisRoom() {
               Objective: اختار على الأقل <b>2 Insights</b> قبل ما تروح <b>Reveal</b> لتثبيت السردية.
             </p>
             <p className="mt-2 text-xs text-white/60">Picked: {pickedCount}/2</p>
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+              <div className="font-semibold">ليه 2 Insights بس؟</div>
+              <p className="mt-1">{frameCopy}</p>
+            </div>
           </div>
 
           <button

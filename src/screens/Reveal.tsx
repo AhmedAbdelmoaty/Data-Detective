@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
+import { CASE001 } from "../content/cases/case001";
 
 type EndingKey =
   | "pricing_backlash"
@@ -24,6 +25,7 @@ type Signal = "pricing" | "checkout" | "marketing" | "product";
 export default function Reveal() {
   const game = useGame();
   const nav = useNavigate();
+  const caseData = CASE001;
 
   // ---- Gather run data ----
   const placed = game.cards.filter((c) => c.placedIn);
@@ -258,6 +260,10 @@ export default function Reveal() {
             <p className="mt-2 text-slate-300">
               دي نهاية “حقيقية” مبنية على اختياراتك (شجرة نهايات).
             </p>
+            <div className="mt-3 rounded-2xl border border-slate-800 bg-slate-900/40 p-3 text-sm text-slate-200">
+              <div className="font-semibold">كيف تعرض النتيجة؟</div>
+              <p className="mt-1">{caseData.revealFrame}</p>
+            </div>
           </div>
 
           <button

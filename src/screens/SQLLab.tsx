@@ -1,12 +1,14 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
+import { CASE001 } from "../content/cases/case001";
 
 type ResultRow = { metric: string; value: string };
 
 export default function SQLLab() {
   const navigate = useNavigate();
   const game = useGame();
+  const caseData = CASE001;
 
   const [query, setQuery] = useState(
     "SELECT *\nFROM payments\nWHERE status = 'failed';"
@@ -31,7 +33,7 @@ export default function SQLLab() {
             <h1 className="text-3xl font-semibold">SQL Lab</h1>
             <p className="mt-1 text-sm text-white/70">Objective: شغّل استعلام واحد يفتح Interviews ويثبت فرضيتك.</p>
             <p className="mt-2 text-sm text-white/70">
-              بعد ما تعمل <b>Run Query</b> هيتفتح <b>Interviews</b>.
+              {caseData.sqlFrame}
             </p>
             <p className="mt-2 text-xs text-white/60">
               Progress: {game.placedCount}/{game.cluesGoal} clues
@@ -95,6 +97,14 @@ export default function SQLLab() {
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+          <div className="text-xs uppercase tracking-widest text-white/50">ما الذي تبحث عنه؟</div>
+          <p className="mt-1 text-sm text-white/75">
+            هل الأخطاء 504 هي السبب؟ هل التسعير خنق التحويل؟ هل CPC خرج عن السيطرة؟
+            الاستعلام ده بيكشف اتجاه واضح قبل ما تواجه الناس.
+          </p>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white/90">
               Results (Prototype)

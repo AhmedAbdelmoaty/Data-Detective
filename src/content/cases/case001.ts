@@ -14,14 +14,19 @@ export type CaseInterviewChoice = {
   tag: string;
   timeCostMin: number;
   trustDelta: number;
-  requiresEvidenceIds?: string[];
+  requiresEvidenceIds?: ReadonlyArray<string>;
 };
 
 export type CaseInterviewQuestion = {
   id: string;
   header: string;
   question: string;
-  choices: CaseInterviewChoice[];
+  persona?: {
+    role: string;
+    vibe: string;
+    youNeed: string;
+  };
+  choices: ReadonlyArray<CaseInterviewChoice>;
 };
 
 export type CaseInsight = {
@@ -33,6 +38,35 @@ export type CaseInsight = {
 export const CASE001 = {
   id: "case001_revenue_drop",
   title: "Case #001 — Revenue Drop",
+  briefing: {
+    role: "أنت محلل بيانات استدعاه ال-CFO لإنقاذ ربع السنة.",
+    stakes:
+      "الإيراد نازل 18% الأسبوع ده. لو السبب غلط، فيه خطر Cut للميزانية وFreeze للـ hires.",
+    pressure: "الوقت بيجري؛ كل خطوة بتكلف Time/Trust. مفيش رفاهية تجارب عشوائية.",
+    win: "تثبت سبب واحد مقنع مدعوم بأدلة + تقترح خطوتين تنفيذيتين.",
+  },
+  roomObjectives: {
+    hq: "اقرأ اللوحة وحدد الغرفة الجاية—هدفها وما يقفلها.",
+    evidence: "اجمع 3 أدلة تحطهم في البورد علشان تفتح SQL وتضيق الفرضيات.",
+    sql: "شغّل استعلام يثبت اتجاه واحد: الدفع؟ التسويق؟ التسعير؟",
+    interviews:
+      "اسأل دعم العملاء وGrowth. هدفك تطلع معلومة تنفي أو تثبت المسارات.",
+    analysis: "اختر 2 Insights بس علشان السردية تفضل مركزة.",
+    reveal:
+      "اربط كل حاجة في تقرير تنفيذي: السبب + ليه + دليل + حركة عاجلة.",
+  },
+  evidenceReason:
+    "قبل ما تجري على SQL أو الناس، لازم تجمع إشارات أولية. التصنيف هنا بيقلل الضوضاء ويوفّر Time.",
+  timeCostReason:
+    "كل محاولة Place بتاخد وقت (تنسيق فرق/جلب بيانات). التسرع بيدفع Time زيادة.",
+  sqlFrame:
+    "الاستعلام هنا هدفه يكشف لو المشكلة في الدفع أو التسويق أو الفوترة. أنت بتدور على نمط يربط الـ drop بمسار واحد.",
+  interviewFrame:
+    "Trust = استعداد الفريق يفتح لك دفاتر وأسرار. قراراتك ممكن تكسبهم أو تخليهم يقفلوا الباب.",
+  analysisFrame:
+    "حوّل الملاحظات لقصتين فقط. 2 Insights = تركيز. ده اللي يخلي القيادة تسمع وتتحرك.",
+  revealFrame:
+    "اعرض الخلاصة كأنك في غرفة حرب: سبب واحد، لماذا حصل، الدليل، وخطوتين تنفيذيتين.",
 
   // ✅ IDs هنا لازم تطابق اللي موجود فعليًا في store/game.tsx (cards)
   evidence: [
@@ -78,8 +112,13 @@ export const CASE001 = {
   interviews: [
     {
       id: "q1_support",
-      header: "Interview #1 — Support Lead",
+      header: "Interview #1 — Support Lead (منى الشناوي)",
       question: "إيه أكتر حاجة لاحظتوها في الشكاوى آخر أسبوعين؟",
+      persona: {
+        role: "Head of Support",
+        vibe: "متوترة عشان ال-CFO بيسأل يوميًا.",
+        youNeed: "تحدد لو الفوترة/التسعير هي اللي مولّعة refunds.",
+      },
       choices: [
         {
           id: "pricing",
@@ -106,8 +145,13 @@ export const CASE001 = {
     },
     {
       id: "q2_growth",
-      header: "Interview #2 — Growth Marketer",
+      header: "Interview #2 — Growth Marketer (كريم فؤاد)",
       question: "إيه اللي اتغير في الحملات مؤخرًا؟",
+      persona: {
+        role: "Sr. Growth Marketer",
+        vibe: "واثق بس دفاعي عن التجارب الجديدة.",
+        youNeed: "تعرف إذا الترافيك هو السبب ولا الدعاية بريئة.",
+      },
       choices: [
         {
           id: "search_budget",
