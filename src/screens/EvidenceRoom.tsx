@@ -17,6 +17,7 @@ export default function EvidenceRoom() {
   );
 
   const canContinueToSQL = game.canEnterSQL;
+  const neededForSql = Math.max(3 - game.placedCount, 0);
 
   return (
     <div className="min-h-screen text-white px-6 py-10">
@@ -39,7 +40,11 @@ export default function EvidenceRoom() {
                   ? "bg-white text-black hover:bg-white/90"
                   : "bg-white/10 text-white/50 pointer-events-none"
               }`}
-              title={canContinueToSQL ? "" : "اجمع Clue واحد على الأقل أولاً"}
+              title={
+                canContinueToSQL
+                  ? ""
+                  : `عايز ${neededForSql} Clues علشان تفتح SQL`
+              }
             >
               Continue → SQL Lab
             </Link>
@@ -117,7 +122,7 @@ export default function EvidenceRoom() {
           <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
             <h2 className="text-lg font-semibold">Investigation Board</h2>
             <p className="mt-1 text-sm text-white/70">
-              الهدف دلوقتي: اعمل Place لأي كارت → يزيد Clues → يفتح SQL.
+              الهدف دلوقتي: اعمل Place لـ 3 كروت علشان SQL يتفتح.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -126,9 +131,11 @@ export default function EvidenceRoom() {
               <BoardLane title="Marketing Signals" subtitle="CAC / CPC / Conversion" items={placedList.filter(x => x.placedIn === "marketing")} />
             </div>
 
-            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
-              تلميح: أول ما تجمع 1 Clue (حالياً) هتقدر تضغط <b>Continue → SQL Lab</b>.
-            </div>
+            {!canContinueToSQL && (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                تلميح: جمع {neededForSql} Clues كمان وهيتفتح <b>Continue → SQL Lab</b>.
+              </div>
+            )}
           </div>
         </div>
       </div>
