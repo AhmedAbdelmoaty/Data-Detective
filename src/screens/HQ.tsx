@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
+import { useGame } from "../store/game";
 function Card({
   title,
   subtitle,
@@ -29,6 +29,7 @@ function Card({
 }
 
 export default function HQ() {
+  const game = useGame();
   const nav = useNavigate();
 
   return (
@@ -56,11 +57,14 @@ export default function HQ() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <div className="text-xs text-white/60">Time</div>
-            <div className="font-semibold mt-1">09:40</div>
+            <div className="font-semibold mt-1">{game.time}</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <div className="text-xs text-white/60">Progress</div>
-            <div className="font-semibold mt-1">0 / 6</div>
+            <div className="font-semibold mt-1">
+              {game.placedCount} / {game.cluesGoal}
+            </div>
+
           </div>
         </div>
 

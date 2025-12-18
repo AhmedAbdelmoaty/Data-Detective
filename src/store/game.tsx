@@ -1,89 +1,194 @@
-// src/store/game.tsx
 import React, { createContext, useContext, useMemo, useState } from "react";
+import { CASE001 } from "../content/cases/case001";
 
-type BoardBucket = "billing" | "product" | "marketing";
+export type Bucket = "billing" | "product" | "marketing";
 
 export type EvidenceCard = {
   id: string;
   title: string;
   hint: string;
-  placedIn?: BoardBucket;
+  bucketHint?: Bucket;
+  placedIn?: Bucket | null;
 };
 
-type GameState = {
-  time: string; // simple display timer string for now
+export type GameState = {
+  // HUD
+  time: string;
   trust: "Low" | "Medium" | "High";
   xp: number;
-  cluesGoal: number;
 
   // Evidence
+  cluesGoal: number;
   cards: EvidenceCard[];
-
-  // Derived progress
   placedCount: number;
+
+  // SQL / Interviews / Analysis
+  sqlRan: boolean;
+  interviewAnswers: Record<string, string>;
+  selectedInsights: string[];
+
+  // Derived unlocks
+  interviewAnswersCount: number;
+  selectedInsightsCount: number;
   canEnterSQL: boolean;
   canEnterInterviews: boolean;
   canEnterAnalysis: boolean;
   canReveal: boolean;
 
   // Actions
-  placeCard: (id: string, bucket: BoardBucket) => void;
-  reset: () => void;
+  placeCard: (cardId: string, bucket: Bucket) => void;
+  runSql: () => void;
+  setInterviewAnswer: (questionId: string, answerId: string) => void;
+  toggleInsight: (insightId: string, max?: number) => void;
+
+  // Reset (support both names to avoid breaking any screen)
+  resetCase: () => void;
+  resetGame: () => void;
 };
 
-const initialCards: EvidenceCard[] = [
-  { id: "refunds", title: "Spike in Refunds", hint: "زادت Refunds بشكل غير طبيعي." },
-  { id: "checkout504", title: "Checkout Error 504", hint: "Errors ارتفعت على خطوة الدفع." },
-  { id: "cpcjump", title: "Paid Ads CPC Jump", hint: "CPC زاد بشكل واضح." },
-  { id: "pricing", title: "New Pricing Plan Complaints", hint: "شكاوى بعد تغيير الـ Pricing." },
-  { id: "adoption", title: "Feature Adoption Drop", hint: "Usage قل بعد Update." },
-  { id: "lpconv", title: "Landing Page Conversion Down", hint: "Conversion قل بعد تحديث." },
-];
+const initialCards: EvidenceCard[] = CASE001.evidence.map((e) => ({
+  id: e.id,
+  title: e.title,
+  hint: e.hint,
+  bucketHint: e.bucketHint,
+  placedIn: null,
+}));
+
+const INITIAL_TIME = "09:40";
+
+// ✅ helper: subtract minutes safely from "HH:MM"
+function spendTime(prev: string, minutes: number) {
+  const [hh, mm] = prev.split(":").map(Number);
+  const total = hh * 60 + mm - minutes;
+  const clamped = Math.max(total, 0);
+  const nh = String(Math.floor(clamped / 60)).padStart(2, "0");
+  const nm = String(clamped % 60).padStart(2, "0");
+  return `${nh}:${nm}`;
+}
 
 const GameCtx = createContext<GameState | null>(null);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
+  // ✅ State
+  const [time, setTime] = useState(INITIAL_TIME);
   const [cards, setCards] = useState<EvidenceCard[]>(initialCards);
 
+  const [sqlRan, setSqlRan] = useState(false);
+  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
+    {},
+  );
+  const [selectedInsights, setSelectedInsights] = useState<string[]>([]);
+
+  // ✅ Derived counts
   const placedCount = useMemo(
     () => cards.filter((c) => Boolean(c.placedIn)).length,
-    [cards]
+    [cards],
   );
 
-  // “Unlock” rules بسيطة جدًا مؤقتًا:
-  // - SQL يفتح بعد ما تحط 3 كروت
-  // - Interviews بعد SQL (هنفترض OK لما SQL يفتح)
-  // - Analysis بعد 5 كروت
-  // - Reveal بعد 6 كروت
+  const interviewAnswersCount = useMemo(
+    () => Object.keys(interviewAnswers).length,
+    [interviewAnswers],
+  );
+
+  const selectedInsightsCount = useMemo(
+    () => selectedInsights.length,
+    [selectedInsights],
+  );
+
+  // --- Unlock rules ---
   const canEnterSQL = placedCount >= 3;
-  const canEnterInterviews = canEnterSQL;
-  const canEnterAnalysis = placedCount >= 5;
-  const canReveal = placedCount >= 6;
+  const canEnterInterviews = canEnterSQL && sqlRan;
+  const canEnterAnalysis = canEnterInterviews && interviewAnswersCount >= 2;
+  const canReveal = canEnterAnalysis && selectedInsightsCount >= 2;
+
+  // ✅ one reset implementation used by both resetCase & resetGame
+  const doReset = () => {
+    setTime(INITIAL_TIME);
+    setCards(initialCards.map((c) => ({ ...c, placedIn: null })));
+    setSqlRan(false);
+    setInterviewAnswers({});
+    setSelectedInsights([]);
+  };
 
   const value: GameState = useMemo(
     () => ({
-      time: "09:40",
+      // HUD
+      time,
       trust: "Medium",
       xp: 75,
+
+      // Evidence
       cluesGoal: 6,
-
       cards,
-
       placedCount,
+
+      // SQL / Interviews / Analysis
+      sqlRan,
+      interviewAnswers,
+      selectedInsights,
+
+      // Derived
+      interviewAnswersCount,
+      selectedInsightsCount,
+
       canEnterSQL,
       canEnterInterviews,
       canEnterAnalysis,
       canReveal,
 
-      placeCard: (id, bucket) => {
+      // Actions
+      placeCard: (cardId, bucket) => {
         setCards((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, placedIn: bucket } : c))
+          prev.map((c) =>
+            c.id === cardId
+              ? {
+                  ...c,
+                  placedIn: bucket,
+                }
+              : c,
+          ),
         );
+
+        // ✅ spend 1 minute per evidence placement
+        setTime((t) => spendTime(t, 1));
       },
 
-      reset: () => setCards(initialCards),
+      runSql: () => setSqlRan(true),
+
+      setInterviewAnswer: (questionId, answerId) => {
+        setInterviewAnswers((prev) => ({
+          ...prev,
+          [questionId]: answerId,
+        }));
+      },
+
+      toggleInsight: (insightId, max = 2) => {
+        setSelectedInsights((prev) => {
+          const has = prev.includes(insightId);
+          if (has) return prev.filter((x) => x !== insightId);
+          if (prev.length >= max) return prev; // block extra picks
+          return [...prev, insightId];
+        });
+      },
+
+      // both are valid now ✅
+      resetCase: doReset,
+      resetGame: doReset,
     }),
-    [cards, placedCount, canEnterSQL, canEnterInterviews, canEnterAnalysis, canReveal]
+    [
+      time,
+      cards,
+      placedCount,
+      sqlRan,
+      interviewAnswers,
+      selectedInsights,
+      interviewAnswersCount,
+      selectedInsightsCount,
+      canEnterSQL,
+      canEnterInterviews,
+      canEnterAnalysis,
+      canReveal,
+    ],
   );
 
   return <GameCtx.Provider value={value}>{children}</GameCtx.Provider>;
@@ -91,6 +196,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
 export function useGame() {
   const ctx = useContext(GameCtx);
-  if (!ctx) throw new Error("useGame must be used within <GameProvider>");
+  if (!ctx) throw new Error("useGame must be used within <GameProvider />");
   return ctx;
 }
