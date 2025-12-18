@@ -24,7 +24,7 @@ export default function AnalysisRoom() {
           <div>
             <h1 className="text-3xl font-semibold">Analysis Room</h1>
             <p className="mt-2 text-sm text-white/70">
-              اختار على الأقل <b>2 Insights</b> قبل ما تروح <b>Reveal</b>.
+              Objective: اختار على الأقل <b>2 Insights</b> قبل ما تروح <b>Reveal</b> لتثبيت السردية.
             </p>
             <p className="mt-2 text-xs text-white/60">Picked: {pickedCount}/2</p>
           </div>

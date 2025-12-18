@@ -254,6 +254,7 @@ export default function Reveal() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold">Reveal</h1>
+            <p className="mt-1 text-sm text-slate-300">Objective: اربط الأدلة والـ Insights علشان تعرض سبب نهائي وخطوات تالية.</p>
             <p className="mt-2 text-slate-300">
               دي نهاية “حقيقية” مبنية على اختياراتك (شجرة نهايات).
             </p>
@@ -276,6 +277,17 @@ export default function Reveal() {
           </div>
 
           <p className="mt-3 text-slate-300">{ending.summary}</p>
+
+          <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 text-sm text-slate-200">
+            <div className="font-semibold">What this means</div>
+            <p className="mt-1 text-slate-300">
+              ده تفسير تنفيذي مختصر: النتيجة هنا هي السردية الأقرب بناءً على الأدلة اللي جمعتها والـ Insights اللي اخترتها.
+            </p>
+            <div className="mt-3 font-semibold">What to do next if confidence is Low</div>
+            <p className="mt-1 text-slate-300">
+              لو الثقة Low، ارجع زوّد Clues في Evidence، شغّل استعلام أوضح في SQL، وجاوب أسئلة Interviews تدعم مسار واحد ثم اختَر Insights تعززه.
+            </p>
+          </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-2xl border border-slate-800 bg-slate-950/30 p-4">

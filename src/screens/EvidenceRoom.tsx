@@ -22,8 +22,11 @@ export default function EvidenceRoom() {
   return (
     <div className="min-h-screen text-white px-6 py-10">
       <div className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Evidence Room</h1>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">Evidence Room</h1>
+            <p className="text-sm text-white/70">Objective: حط 3 كروت أدلة صح علشان تفتح SQL.</p>
+          </div>
 
           <div className="flex items-center gap-2">
             <button
