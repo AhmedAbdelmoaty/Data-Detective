@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
+import { CASE001 } from "../content/cases/case001";
 
 export default function EvidenceRoom() {
   const navigate = useNavigate();
   const game = useGame();
+  const caseData = CASE001;
 
   const unplaced = useMemo(
     () => game.cards.filter((c) => !c.placedIn),
@@ -25,7 +27,12 @@ export default function EvidenceRoom() {
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold">Evidence Room</h1>
-            <p className="text-sm text-white/70">Objective: حط 3 كروت أدلة صح علشان تفتح SQL.</p>
+            <p className="text-sm text-white/70">
+              Objective: حط 3 كروت أدلة صح علشان تفتح SQL وتحدد المسار.
+            </p>
+            <p className="mt-1 text-xs text-white/60">
+              ليه الأول؟ {caseData.evidenceReason}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -78,6 +85,11 @@ export default function EvidenceRoom() {
           </div>
         </div>
 
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+          <div className="font-semibold">ليه الوقت بيتصرف هنا؟</div>
+          <p className="mt-1">{caseData.timeCostReason}</p>
+        </div>
+
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {/* LEFT: Evidence Cards */}
           <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
@@ -125,7 +137,8 @@ export default function EvidenceRoom() {
           <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
             <h2 className="text-lg font-semibold">Investigation Board</h2>
             <p className="mt-1 text-sm text-white/70">
-              الهدف دلوقتي: اعمل Place لـ 3 كروت علشان SQL يتفتح.
+              رتب الإشارات تحت Billing / Product / Marketing. الهدف دلوقتي:
+              اعمل Place لـ 3 كروت علشان SQL يتفتح.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -187,7 +200,7 @@ function BoardLane({
 
         {items.length === 0 && (
           <div className="rounded-xl border border-dashed border-white/15 bg-black/10 p-3 text-xs text-white/60">
-            Drop evidence here (placeholder)
+            فاضي = مفيش سردية. حط دليل يدي شكل للمسار.
           </div>
         )}
       </div>

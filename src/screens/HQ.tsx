@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
+import { CASE001 } from "../content/cases/case001";
 function Card({
   title,
   subtitle,
@@ -31,10 +32,23 @@ function Card({
 export default function HQ() {
   const game = useGame();
   const nav = useNavigate();
+  const roomObjectives = CASE001.roomObjectives;
 
   const remainingForSQL = Math.max(3 - game.placedCount, 0);
   const remainingForAnalysis = Math.max(2 - game.interviewAnswersCount, 0);
   const remainingForReveal = Math.max(2 - game.selectedInsightsCount, 0);
+  let currentObjective = "راجع اللوحة واختار الخطوة الأنسب.";
+  if (!game.canEnterSQL) {
+    currentObjective = `اجمع ${remainingForSQL} أدلة كمان وافتح SQL.`;
+  } else if (!game.canEnterInterviews) {
+    currentObjective = "شغّل استعلام يثبت اتجاه واحد ثم اذهب للـ Interviews.";
+  } else if (!game.canEnterAnalysis) {
+    currentObjective = `أكمل ${remainingForAnalysis} إجابات Interviews علشان تفتح Analysis.`;
+  } else if (!game.canReveal) {
+    currentObjective = `اختار ${remainingForReveal} Insights تانيين لتقفل القضية.`;
+  } else {
+    currentObjective = "المسار جاهز: روح Reveal وقدّم السردية النهائية.";
+  }
 
   return (
     <main className="min-h-screen px-6 py-10">
@@ -46,7 +60,8 @@ export default function HQ() {
             </div>
             <h1 className="mt-2 text-3xl font-bold">Choose your next move</h1>
             <p className="mt-2 text-white/70">
-              دي خريطة التحقيق. اختار غرفة—كل خطوة هتفتح تقدم لاحقًا.
+              HQ = غرفة العمليات. كل غرفة ليها هدف واضح وتكلفة Time/Trust.
+              انتقي الحركة اللي تقرّبك لسبب واحد واضح.
             </p>
           </div>
 
@@ -74,11 +89,24 @@ export default function HQ() {
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
           <div className="text-xs uppercase tracking-widest text-white/60">Mission Board</div>
-          <p className="mt-2">
-            Evidence: جمع Clues علشان تفتح SQL. SQL: شغّل استعلام يفتح Interviews.
-            Interviews: اختيارات تقل/تزود Time & Trust وتفتح Analysis. Analysis: اختار Insights
-            تدعم سردية واضحة وتفتح Reveal.
+          <ul className="mt-2 space-y-2 list-disc pl-5">
+            <li>
+              Evidence Room: {roomObjectives.evidence}
+            </li>
+            <li>SQL Lab: {roomObjectives.sql}</li>
+            <li>Interviews: {roomObjectives.interviews}</li>
+            <li>Analysis Room: {roomObjectives.analysis}</li>
+            <li>Reveal: {roomObjectives.reveal}</li>
+          </ul>
+          <p className="mt-3 text-white/65">
+            Time = ساعات تحقيق. Trust = تعاون الفرق. كل اختيار بيسحب من واحد
+            أو يزود التاني.
           </p>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-white/80">
+          <div className="font-semibold">الهدف الحالي</div>
+          <p className="mt-1">{currentObjective}</p>
         </div>
 
         <div className="mt-6 grid gap-4">
