@@ -72,6 +72,15 @@ export default function HQ() {
           </div>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+          <div className="text-xs uppercase tracking-widest text-white/60">Mission Board</div>
+          <p className="mt-2">
+            Evidence: جمع Clues علشان تفتح SQL. SQL: شغّل استعلام يفتح Interviews.
+            Interviews: اختيارات تقل/تزود Time & Trust وتفتح Analysis. Analysis: اختار Insights
+            تدعم سردية واضحة وتفتح Reveal.
+          </p>
+        </div>
+
         <div className="mt-6 grid gap-4">
           <Card
             title="Evidence Room"

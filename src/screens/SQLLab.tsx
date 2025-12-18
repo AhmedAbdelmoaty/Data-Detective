@@ -29,6 +29,7 @@ export default function SQLLab() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold">SQL Lab</h1>
+            <p className="mt-1 text-sm text-white/70">Objective: شغّل استعلام واحد يفتح Interviews ويثبت فرضيتك.</p>
             <p className="mt-2 text-sm text-white/70">
               بعد ما تعمل <b>Run Query</b> هيتفتح <b>Interviews</b>.
             </p>

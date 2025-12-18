@@ -13,8 +13,15 @@ export default function Intro() {
             </div>
             <h1 className="mt-2 text-4xl font-bold">Data Detective</h1>
             <p className="mt-3 text-white/75 leading-relaxed">
-              أنت محقق بيانات. المطلوب: اكتشف سبب انخفاض <b>Revenue (18%)</b>{" "}
-              عبر غرف: Evidence / SQL / Analysis / Interviews، ثم اعمل Reveal.
+              أنت محقق بيانات. المشكلة: Revenue نازل 18%.
+              <br />
+              الهدف: حدد السبب الحقيقي (مش تخمين).
+              <br />
+              القيود: الوقت بينقص مع كل خطوة + الثقة بتزيد/تقل مع قراراتك.
+              <br />
+              الخريطة: Evidence → SQL → Interviews → Analysis → Reveal.
+              <br />
+              الفوز: توصل لسبب مقنع مع خطوتين تالية (Next Actions).
             </p>
           </div>
 

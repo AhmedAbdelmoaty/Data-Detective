@@ -30,7 +30,7 @@ export default function Interviews() {
           <div>
             <h1 className="text-3xl font-semibold">Interviews</h1>
             <p className="mt-2 text-sm text-white/70">
-              الهدف: تجاوب على <b>2</b> أسئلة علشان يتفتح <b>Analysis Room</b>.
+              Objective: جاوب على <b>2</b> أسئلة علشان يتفتح <b>Analysis Room</b> مع مراعاة Time/Trust.
             </p>
             <p className="mt-2 text-xs text-white/60">Answered: {answeredCount}/2</p>
           </div>
