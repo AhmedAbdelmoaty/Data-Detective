@@ -11,11 +11,11 @@ type Step = {
 
 const steps: Step[] = [
   { id: "hq", label: "HQ", path: "/hq" },
-  { id: "evidence", label: "الأدلة", path: "/evidence" },
-  { id: "sql", label: "SQL", path: "/sql" },
-  { id: "interviews", label: "مقابلات", path: "/interviews" },
-  { id: "analysis", label: "تحليل", path: "/analysis" },
-  { id: "reveal", label: "خاتمة", path: "/reveal" },
+  { id: "evidence", label: "Evidence", path: "/evidence" },
+  { id: "sql", label: "Data Lab", path: "/sql" },
+  { id: "interviews", label: "Witnesses", path: "/interviews" },
+  { id: "analysis", label: "Analysis", path: "/analysis" },
+  { id: "reveal", label: "Reveal", path: "/reveal" },
 ];
 
 export function InvestigationProgress({ current }: { current: StepId }) {
