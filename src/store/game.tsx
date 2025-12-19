@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { CASE001 } from "../content/cases/case001";
+import { CASE002 } from "../content/cases/case002";
 
 export type Bucket = "billing" | "product" | "marketing";
 
@@ -8,6 +8,9 @@ export type EvidenceCard = {
   title: string;
   hint: string;
   bucketHint?: Bucket;
+  meaning?: string;
+  why?: string;
+  pointsToward?: string;
   placedIn?: Bucket | null;
 };
 
@@ -53,11 +56,14 @@ export type GameState = {
   resetGame: () => void;
 };
 
-const initialCards: EvidenceCard[] = CASE001.evidence.map((e) => ({
+const initialCards: EvidenceCard[] = CASE002.evidence.map((e) => ({
   id: e.id,
   title: e.title,
   hint: e.hint,
   bucketHint: e.bucketHint,
+  meaning: e.meaning,
+  why: e.why,
+  pointsToward: e.pointsToward,
   placedIn: null,
 }));
 

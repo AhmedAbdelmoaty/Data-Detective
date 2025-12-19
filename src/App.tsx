@@ -61,7 +61,7 @@ export default function App() {
   // لو صفحة مقفولة -> بنعرض LockedScreen في نفس الـ route.
   const path = location.pathname;
 
-  // السماح الدائم:
+  // Always allow the opening rooms
   const alwaysAllowed = path === "/" || path === "/hq" || path === "/evidence";
 
   return (
@@ -77,9 +77,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterSQL}
             locked={
               <LockedScreen
-                title="SQL Lab مقفول"
-                reason="لازم تحط 3 Clues على الأقل في Evidence Room علشان يتفتح SQL Lab."
-                goToLabel="اذهب إلى Evidence Room"
+                title="Data Lab is locked"
+                reason="Place at least 3 clues in the Evidence Room to open the Data Lab."
+                goToLabel="Go to Evidence Room"
                 goToPath="/evidence"
               />
             }
@@ -96,9 +96,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterInterviews}
             locked={
               <LockedScreen
-                title="Interviews مقفولة"
-                reason="لازم تعمل Run Query في SQL Lab بعد ما تفتح SQL (3 clues)."
-                goToLabel="اذهب إلى SQL Lab"
+                title="Witnesses are locked"
+                reason="Run the query in the Data Lab (after 3 clues) to unlock witness questions."
+                goToLabel="Go to Data Lab"
                 goToPath="/sql"
               />
             }
@@ -115,9 +115,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterAnalysis}
             locked={
               <LockedScreen
-                title="Analysis Room مقفولة"
-                reason="لازم تجاوب على الأقل سؤالين في Interviews علشان يتفتح Analysis."
-                goToLabel="اذهب إلى Interviews"
+                title="Analysis Room is locked"
+                reason="Answer at least two witness questions to unlock the Analysis Room."
+                goToLabel="Go to Witnesses"
                 goToPath="/interviews"
               />
             }
@@ -134,9 +134,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canReveal}
             locked={
               <LockedScreen
-                title="Reveal مقفول"
-                reason="لازم تختار 2 Insights في Analysis Room علشان تفتح النهاية."
-                goToLabel="اذهب إلى Analysis Room"
+                title="Reveal is locked"
+                reason="Pick 2 insights in the Analysis Room to open the finale."
+                goToLabel="Go to Analysis Room"
                 goToPath="/analysis"
               />
             }
