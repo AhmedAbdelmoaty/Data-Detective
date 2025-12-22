@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
-import { CASE002 } from "../content/cases/case002";
+import { CASE002, type CaseInterviewChoice } from "../content/cases/case002";
 import { InvestigationProgress } from "../components/InvestigationProgress";
 
 function Card({
@@ -18,7 +18,7 @@ function Card({
   return (
     <button
       onClick={() => nav(to)}
-      className="text-left w-full rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition p-5 flex items-center justify-between gap-4"
+      className="text-right w-full rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition p-5 flex items-center justify-between gap-4"
     >
       <div>
         <div className="text-lg font-semibold">{title}</div>
@@ -35,56 +35,71 @@ export default function HQ() {
   const game = useGame();
   const nav = useNavigate();
   const roomObjectives = CASE002.roomObjectives;
+  const laneTitles: Record<string, string> = {
+    billing: "المخزون",
+    product: "النظام",
+    marketing: "التسعير",
+  };
+  const insightTitles = new Map<string, string>(CASE002.insights.map((i) => [i.id, i.title]));
+  const questionLookup = new Map<string, { header: string; choices: ReadonlyArray<CaseInterviewChoice> }>(
+    CASE002.interviews.map((q) => [q.id, { header: q.header, choices: q.choices }]),
+  );
 
   const remainingForSQL = Math.max(3 - game.placedCount, 0);
   const remainingForAnalysis = Math.max(2 - game.interviewAnswersCount, 0);
   const remainingForReveal = Math.max(2 - game.selectedInsightsCount, 0);
-  let currentObjective = "Check your board then move to the next clear action.";
+  let currentObjective = "راجع لوحتك ثم انتقل إلى الخطوة التالية الواضحة.";
   if (!game.canEnterSQL) {
-    currentObjective = `Place ${remainingForSQL} more clue(s) to open the Data Lab.`;
+    currentObjective = `ضع ${remainingForSQL} دليلًا إضافيًا لفتح مختبر البيانات.`;
   } else if (!game.canEnterInterviews) {
-    currentObjective = "Complete the query so you know what to ask the witnesses.";
+    currentObjective = "أكمل الاستعلام لتعرف ما الذي ستسأل الشهود عنه.";
   } else if (!game.canEnterAnalysis) {
-    currentObjective = `Answer ${remainingForAnalysis} more witness question(s) to unlock Analysis.`;
+    currentObjective = `أجب على ${remainingForAnalysis} سؤال شاهد إضافي لفتح غرفة التحليل.`;
   } else if (!game.canReveal) {
-    currentObjective = `Lock ${remainingForReveal} more insight(s) to close the case.`;
+    currentObjective = `ثبّت ${remainingForReveal} نتيجة إضافية لإغلاق القضية.`;
   } else {
-    currentObjective = "Path is clear: head to Reveal with your story.";
+    currentObjective = "المسار مفتوح: اذهب إلى كشف الحقيقة مع قصتك.";
   }
 
   const placedNotebook =
     game.cards
       .filter((c) => c.placedIn)
-      .map((c) => `${c.title} → ${c.placedIn}`)
-      .join(" · ") || "No clues placed yet";
+      .map((c) => `${c.title} → ${laneTitles[c.placedIn ?? ""] ?? c.placedIn}`)
+      .join(" · ") || "لم تُوضع أي أدلة بعد";
 
   const interviewNotebook = Object.keys(game.interviewAnswers).length
     ? Object.entries(game.interviewAnswers)
-        .map(([q, a]) => `${q}: ${a}`)
+        .map(([q, a]) => {
+          const qInfo = questionLookup.get(q);
+          const choiceTitle = (qInfo?.choices as CaseInterviewChoice[] | undefined)?.find(
+            (c: CaseInterviewChoice) => c.id === a,
+          )?.title;
+          return `${qInfo?.header ?? q}: ${choiceTitle ?? a}`;
+        })
         .join(" · ")
-    : "No witness answers yet";
+    : "لا توجد إجابات شهود بعد";
 
   const insightNotebook = game.selectedInsights.length
-    ? game.selectedInsights.join(", ")
-    : "No insights selected yet";
+    ? game.selectedInsights
+        .map((id) => insightTitles.get(id) ?? id)
+        .join(", ")
+    : "لم تُحدد أي نتائج بعد";
 
   return (
-    <main className="min-h-screen px-6 py-10">
-      <div className="max-w-5xl mx-auto">
+    <main className="min-h-screen px-6 py-10" dir="rtl">
+      <div className="max-w-5xl mx-auto text-right">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs tracking-widest uppercase text-white/60">Headquarters</div>
-            <h1 className="mt-2 text-3xl font-bold">Choose your next move</h1>
-            <p className="mt-2 text-white/70">
-              HQ = command desk. See who you are, the mission, and the next best step.
-            </p>
+            <div className="text-xs tracking-widest uppercase text-white/60">المقر</div>
+            <h1 className="mt-2 text-3xl font-bold">اختر خطوتك التالية</h1>
+            <p className="mt-2 text-white/70">المقر = مكتب القيادة. اعرف من أنت، المهمة، وأفضل خطوة تالية.</p>
           </div>
 
           <button
             onClick={() => nav("/")}
             className="rounded-xl border border-white/15 bg-black/30 px-4 py-2 text-sm hover:bg-black/40"
           >
-            ← Back
+            رجوع ←
           </button>
         </div>
 
@@ -94,108 +109,108 @@ export default function HQ() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="text-xs text-white/60">Player</div>
-            <div className="font-semibold mt-1">Junior Data Detective</div>
-            <div className="text-xs text-white/60">Rank: Rookie Analyst</div>
+            <div className="text-xs text-white/60">اللاعب</div>
+            <div className="font-semibold mt-1">محقق بيانات مبتدئ</div>
+            <div className="text-xs text-white/60">الرتبة: محلل مبتدئ</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="text-xs text-white/60">Time</div>
+            <div className="text-xs text-white/60">الوقت</div>
             <div className="font-semibold mt-1">{game.time}</div>
-            <div className="text-xs text-white/60">Actions left</div>
+            <div className="text-xs text-white/60">إجراءات متبقية</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <div className="text-xs text-white/60">Trust</div>
+            <div className="text-xs text-white/60">الثقة</div>
             <div className="font-semibold mt-1">{game.trust}</div>
-            <div className="text-xs text-white/60">Keep the owner confident</div>
+            <div className="text-xs text-white/60">حافظ على ثقة المالك</div>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-          <div className="font-semibold">Case snapshot</div>
+          <div className="font-semibold">لمحة عن القضية</div>
           <ul className="mt-2 space-y-1 list-disc pl-5">
-            <li>Scenario: Missing sales across 3 retail branches.</li>
-            <li>Goal: Explain the drop before the day ends.</li>
-            <li>Path: HQ → Evidence → Data Lab → Witnesses → Analysis → Reveal.</li>
+            <li>المشهد: مبيعات مفقودة في ٣ فروع بيع بالتجزئة.</li>
+            <li>الهدف: تفسير الهبوط قبل نهاية اليوم.</li>
+            <li>المسار: المقر ← غرفة الأدلة ← مختبر البيانات ← الشهود ← التحليل ← كشف الحقيقة.</li>
           </ul>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="text-xs uppercase tracking-widest text-white/60">Mission Board</div>
+            <div className="text-xs uppercase tracking-widest text-white/60">لوحة المهمة</div>
             <ul className="mt-2 space-y-2 list-disc pl-5">
-              <li>Evidence Room: {roomObjectives.evidence}</li>
-              <li>Data Lab: {roomObjectives.sql}</li>
-              <li>Witnesses: {roomObjectives.interviews}</li>
-              <li>Analysis Room: {roomObjectives.analysis}</li>
-              <li>Reveal: {roomObjectives.reveal}</li>
+              <li>غرفة الأدلة: {roomObjectives.evidence}</li>
+              <li>مختبر البيانات: {roomObjectives.sql}</li>
+              <li>الشهود: {roomObjectives.interviews}</li>
+              <li>غرفة التحليل: {roomObjectives.analysis}</li>
+              <li>كشف الحقيقة: {roomObjectives.reveal}</li>
             </ul>
             <p className="mt-3 text-white/65">
-              Time = how many actions you can take. Trust = how confident the boss is. Smart choices protect both.
+              الوقت = كم إجراء يمكنك تنفيذه. الثقة = مدى اطمئنان المالك. الاختيارات الذكية تحمي الاثنين.
             </p>
           </div>
 
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-            <div className="font-semibold">Notebook preview</div>
+            <div className="font-semibold">معاينة دفتر الملاحظات</div>
             <ul className="mt-2 space-y-2 text-xs text-white/80 list-disc pl-4">
-              <li>Placed clues: {placedNotebook}</li>
-              <li>Witness answers: {interviewNotebook}</li>
-              <li>Insights locked: {insightNotebook}</li>
+              <li>الأدلة الموضوعة: {placedNotebook}</li>
+              <li>إجابات الشهود: {interviewNotebook}</li>
+              <li>النتائج المثبتة: {insightNotebook}</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-white/80">
-          <div className="font-semibold">Next best step</div>
+          <div className="font-semibold">الخطوة الأفضل التالية</div>
           <p className="mt-1">{currentObjective}</p>
-          <p className="text-xs text-white/60 mt-1">Tip: Go to Evidence Room first to collect and place clues.</p>
+          <p className="text-xs text-white/60 mt-1">نصيحة: اذهب لغرفة الأدلة أولًا لجمع ووضع البطاقات.</p>
         </div>
 
         <div className="mt-6 grid gap-4">
           <Card
-            title="Evidence Room"
-            subtitle="Collect clues and place them under a likely cause"
+            title="غرفة الأدلة"
+            subtitle="اجمع الأدلة وضعها تحت السبب الأرجح"
             to="/evidence"
-            tag="Opens Data Lab when 3 placed"
+            tag="يفتح مختبر البيانات عند وضع ٣"
           />
           <Card
-            title="Data Lab (SQL)"
+            title="مختبر البيانات (SQL)"
             subtitle={
               remainingForSQL > 0
-                ? `Place ${remainingForSQL} more clue(s) to open`
-                : "Complete a simple query to guide witness questions"
+                ? `ضع ${remainingForSQL} دليلًا إضافيًا للفتح`
+                : "أكمل استعلامًا بسيطًا لتوجيه أسئلة الشهود"
             }
             to="/sql"
-            tag="Query"
+            tag="استعلام"
           />
           <Card
-            title="Analysis Room"
+            title="غرفة التحليل"
             subtitle={
               game.canEnterAnalysis
-                ? "Filters + charts to craft insights"
-                : `Answer ${remainingForAnalysis} more witness question(s)`
+                ? "فلاتر + رسوم لصياغة النتائج"
+                : `أجب على ${remainingForAnalysis} سؤال شاهد إضافي`
             }
             to="/analysis"
-            tag="Insight"
+            tag="نتائج"
           />
           <Card
-            title="Witnesses"
+            title="الشهود"
             subtitle={
               game.canEnterInterviews
-                ? "Ask the manager and cashier"
-                : "Run the query first to unlock"
+                ? "اسأل المدير والكاشير"
+                : "شغّل الاستعلام أولًا للفتح"
             }
             to="/interviews"
-            tag="Choices"
+            tag="اختيارات"
           />
           <Card
-            title="Reveal"
+            title="كشف الحقيقة"
             subtitle={
               game.canReveal
-                ? "Close the case with evidence and confidence"
-                : `Lock ${remainingForReveal} more insight(s)`
+                ? "اختتم القضية بأدلة وثقة"
+                : `ثبّت ${remainingForReveal} نتيجة إضافية`
             }
             to="/reveal"
-            tag="Locked"
+            tag="مقفول"
           />
         </div>
       </div>

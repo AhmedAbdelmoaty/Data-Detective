@@ -12,6 +12,12 @@ type Insight = {
 
 type MetricKey = "sales" | "failed_txn" | "out_of_stock";
 
+const metricLabels: Record<MetricKey, string> = {
+  sales: "المبيعات",
+  failed_txn: "المعاملات الفاشلة",
+  out_of_stock: "نفاد المخزون",
+};
+
 export default function AnalysisRoom() {
   const navigate = useNavigate();
   const game = useGame();
@@ -46,19 +52,19 @@ export default function AnalysisRoom() {
   const maxMetric = Math.max(...metricByBranch.map((m) => m.value), 1);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white">
-      <div className="mx-auto w-full max-w-5xl px-6 py-10">
+    <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white" dir="rtl">
+      <div className="mx-auto w-full max-w-5xl px-6 py-10 text-right">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold">Analysis Room</h1>
+            <h1 className="text-3xl font-semibold">غرفة التحليل</h1>
             <p className="mt-2 text-sm text-white/70">
-              Objective: pick at least <b>2 Insights</b> based on the charts before heading to <b>Reveal</b>.
+              الهدف: اختر على الأقل <b>٢ نتيجة</b> من الرسوم قبل الذهاب إلى <b>كشف الحقيقة</b>.
             </p>
-            <p className="mt-2 text-xs text-white/60">Picked: {pickedCount}/2</p>
+            <p className="mt-2 text-xs text-white/60">تم الاختيار: {pickedCount}/2</p>
             <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-              <div className="font-semibold">Why only 2?</div>
+              <div className="font-semibold">لماذا فقط ٢؟</div>
               <p className="mt-1">{frameCopy}</p>
-              <p className="mt-1 text-xs text-white/60">Use filters to sanity-check your story like a mini dashboard.</p>
+              <p className="mt-1 text-xs text-white/60">استخدم الفلاتر للتحقق من قصتك مثل لوحة تحكم صغيرة.</p>
             </div>
           </div>
 
@@ -66,7 +72,7 @@ export default function AnalysisRoom() {
             onClick={() => navigate("/hq")}
             className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
           >
-            Back to HQ
+            رجوع إلى المقر
           </button>
         </div>
 
@@ -76,7 +82,7 @@ export default function AnalysisRoom() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Branch filter</div>
+            <div className="text-xs text-white/60">تصفية الفروع</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {["all", "A", "B", "C"].map((b) => (
                 <button
@@ -86,19 +92,19 @@ export default function AnalysisRoom() {
                     branchFilter === b ? "bg-white text-black" : "bg-black/20 border-white/15 text-white/70"
                   }`}
                 >
-                  {b === "all" ? "All branches" : `Branch ${b}`}
+                  {b === "all" ? "كل الفروع" : `الفرع ${b}`}
                 </button>
               ))}
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Metric toggle</div>
+            <div className="text-xs text-white/60">تبديل المؤشر</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {(
                 [
-                  { key: "sales", label: "Sales" },
-                  { key: "failed_txn", label: "Failed Txn" },
-                  { key: "out_of_stock", label: "Out-of-stock" },
+                  { key: "sales", label: "المبيعات" },
+                  { key: "failed_txn", label: "المعاملات الفاشلة" },
+                  { key: "out_of_stock", label: "نفاد المخزون" },
                 ] as const
               ).map((m) => (
                 <button
@@ -117,15 +123,15 @@ export default function AnalysisRoom() {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <ChartCard
-            title="Sales by branch — this vs last week"
-            subtitle="If traffic is stable but sales fall, look at stock or systems."
+            title="المبيعات حسب الفرع — هذا الأسبوع مقابل السابق"
+            subtitle="إذا كانت الحركة مستقرة لكن المبيعات تهبط، انظر للمخزون أو الأنظمة."
           >
             <div className="space-y-3">
               {branches.map(({ branch, thisWeek, lastWeek }) => (
                 <div key={branch}>
                   <div className="flex justify-between text-xs text-white/70">
-                    <span>Branch {branch}</span>
-                    <span>{thisWeek?.sales ?? 0} (this) / {lastWeek?.sales ?? 0} (last)</span>
+                    <span>الفرع {branch}</span>
+                    <span>{thisWeek?.sales ?? 0} (هذا) / {lastWeek?.sales ?? 0} (السابق)</span>
                   </div>
                   <div className="flex gap-2 items-center mt-1">
                     <div
@@ -143,14 +149,14 @@ export default function AnalysisRoom() {
           </ChartCard>
 
           <ChartCard
-            title={`${metricView.replace("_", " ") || "Metric"} by branch (this week)`}
-            subtitle="Use this like a quick BI chart: who is worst on this metric?"
+            title={`${metricLabels[metricView] || "المؤشر"} حسب الفرع (هذا الأسبوع)`}
+            subtitle="استخدمه كلوحة سريعة: من الأسوأ على هذا المؤشر؟"
           >
             <div className="space-y-3">
               {metricByBranch.map((m) => (
                 <div key={m.branch}>
                   <div className="flex justify-between text-xs text-white/70">
-                    <span>Branch {m.branch}</span>
+                    <span>الفرع {m.branch}</span>
                     <span>{m.value}</span>
                   </div>
                   <div
@@ -160,25 +166,25 @@ export default function AnalysisRoom() {
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-white/60">Hint: Out-of-stock spikes usually point to Stock, failed_txn to System.</p>
+            <p className="mt-2 text-[11px] text-white/60">تلميح: قفزات نفاد المخزون تشير للمخزون، والمعاملات الفاشلة تشير للنظام.</p>
           </ChartCard>
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-            <div className="font-semibold">Notebook</div>
+            <div className="font-semibold">دفتر الملاحظات</div>
             <ul className="mt-2 space-y-2 list-disc pl-5 text-xs text-white/70">
-              <li>Branch filter: {branchFilter === "all" ? "All" : `Branch ${branchFilter}`}</li>
-              <li>Metric view: {metricView}</li>
-              <li>Insights picked: {game.selectedInsights.join(", ") || "None yet"}</li>
+              <li>تصفية الفروع: {branchFilter === "all" ? "الكل" : `الفرع ${branchFilter}`}</li>
+              <li>عرض المؤشر: {metricLabels[metricView]}</li>
+              <li>النتائج المختارة: {game.selectedInsights.join(", ") || "لا شيء بعد"}</li>
             </ul>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-            <div className="font-semibold">How to read this</div>
+            <div className="font-semibold">كيف تقرأ هذا</div>
             <ul className="mt-2 space-y-2 list-disc pl-5">
-              <li>Stock: big sales drop + out_of_stock up at one branch.</li>
-              <li>System: failed_txn leads while traffic is stable.</li>
-              <li>Pricing: refunds or complaints cluster after price change.</li>
+              <li>المخزون: هبوط مبيعات كبير + ارتفاع نفاد المخزون في فرع واحد.</li>
+              <li>النظام: المعاملات الفاشلة تتصدر مع حركة مستقرة.</li>
+              <li>التسعير: الاستردادات أو الشكاوى تتجمع بعد تغيير السعر.</li>
             </ul>
           </div>
         </div>
@@ -191,7 +197,7 @@ export default function AnalysisRoom() {
               <button
                 key={i.id}
                 onClick={() => game.toggleInsight(i.id, 3)}
-                className={`w-full rounded-2xl border p-6 text-left transition ${
+                className={`w-full rounded-2xl border p-6 text-right transition ${
                   active ? "border-emerald-400/40 bg-emerald-400/10" : "border-white/10 bg-white/5 hover:bg-white/10"
                 }`}
               >
@@ -201,8 +207,8 @@ export default function AnalysisRoom() {
                     <div className="mt-1 text-sm text-white/70">{i.desc}</div>
                   </div>
                   <div className="text-xs text-white/60">
-                    Picked:{" "}
-                    <span className={active ? "text-emerald-300" : "text-white/60"}>{active ? "Yes" : "No"}</span>
+                    مختارة:{" "}
+                    <span className={active ? "text-emerald-300" : "text-white/60"}>{active ? "نعم" : "لا"}</span>
                   </div>
                 </div>
               </button>
@@ -215,7 +221,7 @@ export default function AnalysisRoom() {
             onClick={() => navigate("/interviews")}
             className="text-sm text-white/80 hover:text-white"
           >
-            ← Back to Witnesses
+            ← رجوع إلى الشهود
           </button>
 
           <button
@@ -224,9 +230,9 @@ export default function AnalysisRoom() {
             className={`rounded-xl px-5 py-3 text-sm font-semibold ${
               canContinue ? "bg-white text-black hover:bg-white/90" : "cursor-not-allowed bg-white/10 text-white/40"
             }`}
-            title={canContinue ? "Continue" : "Pick 2 insights first"}
+            title={canContinue ? "متابعة" : "اختر نتيجتين أولًا"}
           >
-            Continue → Reveal
+            متابعة ← كشف الحقيقة
           </button>
         </div>
       </div>

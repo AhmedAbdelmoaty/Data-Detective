@@ -21,9 +21,9 @@ function LockedScreen({
 }) {
   const nav = useNavigate();
   return (
-    <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <h2 style={{ fontSize: 28, marginBottom: 8 }}>🔒 {title}</h2>
-      <p style={{ opacity: 0.9, marginBottom: 16 }}>{reason}</p>
+    <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }} dir="rtl">
+      <h2 style={{ fontSize: 28, marginBottom: 8, textAlign: "right" }}>🔒 {title}</h2>
+      <p style={{ opacity: 0.9, marginBottom: 16, textAlign: "right" }}>{reason}</p>
 
       <button
         type="button"
@@ -33,6 +33,7 @@ function LockedScreen({
           borderRadius: 10,
           border: "1px solid rgba(255,255,255,0.2)",
           cursor: "pointer",
+          textAlign: "right",
         }}
       >
         {goToLabel}
@@ -77,9 +78,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterSQL}
             locked={
               <LockedScreen
-                title="Data Lab is locked"
-                reason="Place at least 3 clues in the Evidence Room to open the Data Lab."
-                goToLabel="Go to Evidence Room"
+                title="مختبر البيانات مقفول"
+                reason="ضع ٣ أدلة في غرفة الأدلة لفتح مختبر البيانات."
+                goToLabel="اذهب إلى غرفة الأدلة"
                 goToPath="/evidence"
               />
             }
@@ -96,9 +97,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterInterviews}
             locked={
               <LockedScreen
-                title="Witnesses are locked"
-                reason="Run the query in the Data Lab (after 3 clues) to unlock witness questions."
-                goToLabel="Go to Data Lab"
+                title="الشهود مقفولون"
+                reason="شغّل الاستعلام في مختبر البيانات (بعد ٣ أدلة) لفتح أسئلة الشهود."
+                goToLabel="اذهب إلى مختبر البيانات"
                 goToPath="/sql"
               />
             }
@@ -115,9 +116,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canEnterAnalysis}
             locked={
               <LockedScreen
-                title="Analysis Room is locked"
-                reason="Answer at least two witness questions to unlock the Analysis Room."
-                goToLabel="Go to Witnesses"
+                title="غرفة التحليل مقفولة"
+                reason="أجب على سؤالين من الشهود على الأقل لفتح غرفة التحليل."
+                goToLabel="اذهب إلى الشهود"
                 goToPath="/interviews"
               />
             }
@@ -134,9 +135,9 @@ export default function App() {
             allow={alwaysAllowed ? true : game.canReveal}
             locked={
               <LockedScreen
-                title="Reveal is locked"
-                reason="Pick 2 insights in the Analysis Room to open the finale."
-                goToLabel="Go to Analysis Room"
+                title="كشف الحقيقة مقفول"
+                reason="اختر نتيجتين في غرفة التحليل لفتح النهاية."
+                goToLabel="اذهب إلى غرفة التحليل"
                 goToPath="/analysis"
               />
             }
