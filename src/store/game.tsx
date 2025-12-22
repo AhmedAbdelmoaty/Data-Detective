@@ -36,6 +36,8 @@ export type GameState = {
 
   // SQL / Interviews / Analysis
   sqlRan: boolean;
+  sqlInterpretation?: { questionId: string; interpretationId: string; flag: string } | null;
+  sqlFlags: Record<string, boolean>;
   interviewAnswers: Record<string, string>;
   selectedInsights: string[];
 
@@ -57,6 +59,13 @@ export type GameState = {
   getPlacedEvidenceIds: () => string[];
   hasEvidence: (evidenceId: string) => boolean;
   runSql: () => void;
+  applySqlInterpretation: (opts: {
+    questionId: string;
+    interpretationId: string;
+    note: string;
+    trustDelta?: number;
+    flag: string;
+  }) => void;
   setInterviewAnswer: (questionId: string, answerId: string) => void;
   applyInterviewChoiceEffects: (opts: {
     timeCostMin: number;
@@ -105,6 +114,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [forcedSqlAccess, setForcedSqlAccess] = useState(false);
 
   const [sqlRan, setSqlRan] = useState(false);
+  const [sqlInterpretation, setSqlInterpretation] = useState<{
+    questionId: string;
+    interpretationId: string;
+    flag: string;
+  } | null>(null);
+  const [sqlFlags, setSqlFlags] = useState<Record<string, boolean>>({});
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
     {},
   );
@@ -154,6 +169,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setTrustScore(50);
     setCards(initialCards.map((c) => ({ ...c, placedIn: null, interpretation: undefined })));
     setSqlRan(false);
+    setSqlInterpretation(null);
+    setSqlFlags({});
     setInterviewAnswers({});
     setSelectedInsights([]);
     setNotebook([]);
@@ -177,6 +194,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // SQL / Interviews / Analysis
       sqlRan,
+      sqlInterpretation,
+      sqlFlags,
       interviewAnswers,
       selectedInsights,
 
@@ -249,6 +268,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       runSql: () => setSqlRan(true),
 
+      applySqlInterpretation: ({
+        questionId,
+        interpretationId,
+        note,
+        trustDelta = 0,
+        flag,
+      }) => {
+        setNotebook((prev) => [...prev, note]);
+        if (trustDelta !== 0) {
+          setTrustScore((prev) =>
+            Math.min(100, Math.max(0, prev + trustDelta)),
+          );
+        }
+        setSqlFlags((prev) => ({ ...prev, [flag]: true }));
+        setSqlInterpretation({ questionId, interpretationId, flag });
+      },
+
       setInterviewAnswer: (questionId, answerId) => {
         setInterviewAnswers((prev) => ({
           ...prev,
@@ -297,6 +333,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       canEnterAnalysis,
       canReveal,
       notebook,
+      sqlInterpretation,
+      sqlFlags,
       forcedSqlAccess,
     ],
   );
