@@ -25,12 +25,8 @@ export type CaseInterviewChoice = {
   tag: string;
   timeCostMin: number;
   trustDelta: number;
-  answer: string;
-  notebook: string;
-  style: "confirming" | "conflicting" | "vague";
-  requiresSqlFlags?: ReadonlyArray<string>;
-  requiresCategoryLean?: ReadonlyArray<CaseBucket>;
   requiresEvidenceIds?: ReadonlyArray<string>;
+  note?: string;
 };
 
 export type CaseInterviewQuestion = {
@@ -108,7 +104,7 @@ export const CASE002 = {
     "أكد هل تعديل السعر أربك الزبائن أم أن المخزون نفد ببساطة.",
   ],
   interviewFrame:
-    "أنت المحقق. اختر سؤالًا واحدًا في كل مرة. كل سؤال يستهلك وقتًا وقد يؤثر على الثقة.",
+    "التحقيق الأعمق يستغرق وقتًا أطول. اصرف الوقت للتفاصيل أو سرع الخطى لربح الثقة سريعًا.",
   analysisFrame:
     "اختر فقط النتائج التي تثبت السبب مباشرة. الوضوح والبساطة أفضل من المصطلحات الثقيلة.",
   revealFrame:
@@ -307,43 +303,28 @@ export const CASE002 = {
       },
       choices: [
         {
-          id: "delay_window",
-          title: "اسأل عن توقيت الشحنة المتأخرة",
-          tag: "المخزون",
+          id: "stock_gap",
+          title: "شحنة الفرع ب فاتتها صباح الجمعة",
+          tag: "توقيت المخزون",
           timeCostMin: 7,
-          trustDelta: 1,
-          style: "confirming",
-          answer:
-            "يقول إن الشاحنة وصلت بعد الظهر بساعات، ويشير إلى أن الرفوف بقيت نصف فارغة حتى المساء.",
-          notebook:
-            "إشارة من المدير: تأخر الشحنة للفرع ب أبقى الرفوف فارغة لفترة طويلة؛ قد يفسر نقص المبيعات هناك.",
-          requiresSqlFlags: ["sqlSuggestsStockShortageBranchB", "sqlSuggestsStockCorrelation"],
+          trustDelta: 2,
+          note: "يؤكد مسار نفاد المخزون.",
         },
         {
-          id: "promo_conflict",
-          title: "اسأل عن رد فعل الناس على الأسعار الجديدة",
-          tag: "التسعير",
+          id: "price_pushback",
+          title: "الزبائن الدائمون سألوا عن سبب زيادة الأسعار",
+          tag: "قلق التسعير",
           timeCostMin: 6,
           trustDelta: -1,
-          style: "conflicting",
-          answer:
-            "يذكر أن بعض الزبائن اعترضوا لكن المبيعات كانت تتحرك؛ لا يجزم إن كان السعر هو السبب أو مجرد ضجيج.",
-          notebook:
-            "إشارة من المدير: اعتراضات على الأسعار موجودة لكن لا يجزم أنها السبب الرئيسي، الإشارة تبقى متعارضة مع مسار المخزون.",
-          requiresCategoryLean: ["marketing"],
+          note: "يشير لاحتكاك في الأسعار.",
         },
         {
-          id: "ops_blur",
-          title: "اسأل إن كان النظام يبطئ استلام الشحنات",
-          tag: "النظام",
-          timeCostMin: 8,
-          trustDelta: -1,
-          style: "vague",
-          answer:
-            "يقول إن النظام طلب إعادة إدخال بنود الاستلام مرتين، وقد يكون التأخير من الأجهزة أو من الفريق، غير متأكد.",
-          notebook:
-            "إشارة من المدير: النظام أربك استلام الشحنة وربما أخر التفريغ؛ إشارة غامضة بين عطل جهاز أو ضغط الفريق.",
-          requiresSqlFlags: ["sqlSuggestsSystemIssueInBranchC", "sqlSuggestsMixedSignal"],
+          id: "nothing_major",
+          title: "لا تغييرات كبيرة مذكورة",
+          tag: "حيادي",
+          timeCostMin: 4,
+          trustDelta: 0,
+          note: "يبقي الإشارات ضعيفة.",
         },
       ],
     },
@@ -358,44 +339,28 @@ export const CASE002 = {
       },
       choices: [
         {
-          id: "pos_freeze",
-          title: "اسأل عن تجمد الجهاز أثناء الدفع",
-          tag: "النظام",
+          id: "pos_reboots",
+          title: "نظام نقاط البيع أعيد تشغيله عدة مرات في الفرع ج",
+          tag: "مشكلة نظام",
           timeCostMin: 8,
-          trustDelta: 1,
-          style: "confirming",
-          answer:
-            "يؤكد أن الجهاز تجمد مرتين أو ثلاث، لكن أحيانًا يعود للعمل بعد إعادة البطاقة؛ لا يجزم إن كان الخطأ من الشبكة أو التحديث الأخير.",
-          notebook:
-            "إشارة من الكاشير: تجمدات متقطعة في الفرع ج تعطل الدفع لبضع دقائق، قد تكون من الشبكة أو التحديث.",
-          requiresSqlFlags: ["sqlSuggestsSystemIssueInBranchC", "sqlSuggestsCheckPricing"],
+          trustDelta: 2,
+          note: "يدعم سبب النظام/الجدولة.",
         },
         {
-          id: "discount_confusion",
-          title: "اسأل عن ارتباك الخصومات بعد تغيير الأسعار",
-          tag: "التسعير",
+          id: "price_confusion",
+          title: "الناس اشتكوا من الأسعار الجديدة",
+          tag: "رفض التسعير",
           timeCostMin: 6,
           trustDelta: -1,
-          style: "conflicting",
-          answer:
-            "يقول إن بعض الفواتير أظهرت خصمًا غير متوقع ثم أزالته عند الإعادة، وربما كان مجرد تحديث سعر لم يكتمل.",
-          notebook:
-            "إشارة من الكاشير: خصومات تظهر ثم تختفي في الفواتير، إشارة متضاربة قد تعني تزامن سعر أو خطأ إدخال.",
-          requiresCategoryLean: ["marketing"],
-          requiresSqlFlags: ["sqlSuggestsCheckPriceFirst", "sqlSuggestsCheckPricing"],
+          note: "يدعم اشتباه التسعير.",
         },
         {
-          id: "stock_line",
-          title: "اسأل إن كان الزبائن غادروا بسبب نقص صنف معين",
-          tag: "المخزون",
+          id: "customers_waited",
+          title: "بعضهم غادر بسبب نقص الأصناف",
+          tag: "إحباط المخزون",
           timeCostMin: 5,
           trustDelta: 1,
-          style: "confirming",
-          answer:
-            "يذكر أن طابورًا صغيرًا تشكل عند سؤال الزبائن عن مشروب نفد، بعضهم انتظر وآخرون غادروا دون شراء شيء آخر.",
-          notebook:
-            "إشارة من الكاشير: زبائن غادروا بسبب نفاد صنف سريع، يؤكد تأثير المخزون على المبيعات.",
-          requiresSqlFlags: ["sqlSuggestsStockShortageBranchB", "sqlSuggestsStockCorrelation", "sqlSuggestsMixedSignal"],
+          note: "يدعم اشتباه المخزون.",
         },
       ],
     },
