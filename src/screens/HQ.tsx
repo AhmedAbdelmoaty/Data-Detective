@@ -40,6 +40,7 @@ export default function HQ() {
     product: "النظام",
     marketing: "التسعير",
   };
+  const insightTitles = new Map<string, string>(CASE002.insights.map((i) => [i.id, i.title]));
   const questionLookup = new Map<string, { header: string; choices: ReadonlyArray<CaseInterviewChoice> }>(
     CASE002.interviews.map((q) => [q.id, { header: q.header, choices: q.choices }]),
   );
@@ -97,7 +98,9 @@ export default function HQ() {
     : "لا توجد إجابات شهود بعد";
 
   const insightNotebook = game.selectedInsights.length
-    ? game.selectedInsights.map((ins) => ins.text).join("، ")
+    ? game.selectedInsights
+        .map((id) => insightTitles.get(id) ?? id)
+        .join(", ")
     : "لم تُحدد أي نتائج بعد";
 
   return (

@@ -3,24 +3,6 @@ import { CASE002 } from "../content/cases/case002";
 
 export type Bucket = "billing" | "product" | "marketing";
 
-export type LockedInsight = {
-  id: string;
-  text: string;
-  metric?: string;
-  branch?: string;
-  week?: string;
-};
-
-export type Case002Report = {
-  cause: string;
-  branch: string;
-  notes: string[];
-  summary: string;
-  confidenceScore: number;
-  confidenceLabel: "مرتفع" | "متوسط" | "منخفض";
-  feedback?: string;
-};
-
 export type EvidenceCard = {
   id: string;
   title: string;
@@ -57,8 +39,7 @@ export type GameState = {
   sqlInterpretation?: { questionId: string; interpretationId: string; flag: string } | null;
   sqlFlags: Record<string, boolean>;
   interviewAnswers: Record<string, string>;
-  selectedInsights: LockedInsight[];
-  case002Report: Case002Report | null;
+  selectedInsights: string[];
 
   // Derived unlocks
   interviewAnswersCount: number;
@@ -91,9 +72,7 @@ export type GameState = {
     trustDelta: number;
     notebookEntry?: string;
   }) => void;
-  toggleInsight: (insight: LockedInsight, max?: number) => boolean;
-  removeInsight: (insightId: string) => void;
-  setCaseReport: (report: Case002Report) => void;
+  toggleInsight: (insightId: string, max?: number) => void;
 
   // Reset (support both names to avoid breaking any screen)
   resetCase: () => void;
@@ -145,8 +124,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
     {},
   );
-  const [selectedInsights, setSelectedInsights] = useState<LockedInsight[]>([]);
-  const [case002Report, setCase002Report] = useState<Case002Report | null>(null);
+  const [selectedInsights, setSelectedInsights] = useState<string[]>([]);
 
   // ✅ Derived counts
   const placedCount = useMemo(
@@ -198,7 +176,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSelectedInsights([]);
     setNotebook([]);
     setForcedSqlAccess(false);
-    setCase002Report(null);
   };
 
   const value: GameState = useMemo(
@@ -222,7 +199,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlFlags,
       interviewAnswers,
       selectedInsights,
-      case002Report,
 
       // Derived
       interviewAnswersCount,
@@ -317,26 +293,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }));
       },
 
-      toggleInsight: (insight, max = 2) => {
-        let blocked = false;
+      toggleInsight: (insightId, max = 2) => {
         setSelectedInsights((prev) => {
-          const has = prev.find((x) => x.id === insight.id);
-          if (has) return prev.filter((x) => x.id !== insight.id);
-          if (prev.length >= max) {
-            blocked = true;
-            return prev;
-          }
-          setNotebook((notes) => [...notes, `تم اعتماد استنتاج: ${insight.text}`]);
-          return [...prev, insight];
+          const has = prev.includes(insightId);
+          if (has) return prev.filter((x) => x !== insightId);
+          if (prev.length >= max) return prev; // block extra picks
+          return [...prev, insightId];
         });
-        return blocked;
       },
-
-      removeInsight: (insightId) => {
-        setSelectedInsights((prev) => prev.filter((x) => x.id !== insightId));
-      },
-
-      setCaseReport: (report) => setCase002Report(report),
 
       applyInterviewChoiceEffects: ({ timeCostMin, trustDelta, notebookEntry }) => {
         setTime((t) => spendTime(t, timeCostMin));
@@ -376,7 +340,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlInterpretation,
       sqlFlags,
       forcedSqlAccess,
-      case002Report,
     ],
   );
 
