@@ -70,6 +70,7 @@ export type GameState = {
   applyInterviewChoiceEffects: (opts: {
     timeCostMin: number;
     trustDelta: number;
+    notebookEntry?: string;
   }) => void;
   toggleInsight: (insightId: string, max?: number) => void;
 
@@ -301,11 +302,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       },
 
-      applyInterviewChoiceEffects: ({ timeCostMin, trustDelta }) => {
+      applyInterviewChoiceEffects: ({ timeCostMin, trustDelta, notebookEntry }) => {
         setTime((t) => spendTime(t, timeCostMin));
         setTrustScore((prev) =>
           Math.min(100, Math.max(0, prev + trustDelta * 10)),
         );
+        if (notebookEntry) {
+          setNotebook((prev) => [...prev, notebookEntry]);
+        }
       },
 
       proceedLowConfidence: ({ timeCostMin }) => {

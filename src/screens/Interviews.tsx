@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useGame } from "../store/game";
+import { useGame, type Bucket } from "../store/game";
 import {
   CASE002,
   type CaseInterviewChoice,
@@ -14,17 +14,38 @@ export default function Interviews() {
 
   const questions: readonly CaseInterviewQuestion[] = CASE002.interviews;
   const frameCopy = CASE002.interviewFrame;
+  const interpreted = game.cards.filter((c) => c.interpretation);
+  const categoryCounts = interpreted.reduce<Record<string, number>>(
+    (acc, card) => {
+      const cat = card.interpretation?.category as Bucket | undefined;
+      if (cat) acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+  const leadingCategoryEntry = Object.entries(categoryCounts).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+  const leadingCategory = leadingCategoryEntry?.[1]
+    ? (leadingCategoryEntry[0] as Bucket)
+    : undefined;
   const answeredCount = Object.values(game.interviewAnswers).filter(Boolean).length;
   const canContinue = game.canEnterAnalysis; // interviewAnswersCount >= 2
 
   const handleChoice = (
     questionId: string,
-    choice: { id: string; timeCostMin: number; trustDelta: number; note?: string },
+    choice: {
+      id: string;
+      timeCostMin: number;
+      trustDelta: number;
+      notebook: string;
+    },
   ) => {
     if (game.interviewAnswers[questionId] === choice.id) return;
     game.applyInterviewChoiceEffects({
       timeCostMin: choice.timeCostMin,
       trustDelta: choice.trustDelta,
+      notebookEntry: choice.notebook,
     });
     game.setInterviewAnswer(questionId, choice.id);
   };
@@ -35,14 +56,14 @@ export default function Interviews() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold">الشهود</h1>
-            <p className="mt-2 text-sm text-white/70">
-              الهدف: أجب على <b>٢</b> سؤالين لفتح <b>التحليل</b>. الأسئلة الأعمق تستهلك وقتًا أكثر لكنها قد ترفع الثقة.
-            </p>
+            <p className="mt-2 text-sm text-white/70">{frameCopy}</p>
             <p className="mt-2 text-xs text-white/60">أُجيبت: {answeredCount}/2</p>
             <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
               <div className="font-semibold">لماذا الثقة مهمة</div>
-              <p className="mt-1">{frameCopy}</p>
-              <p className="mt-1 text-xs text-white/60">التحقيق الأعمق يأخذ وقتًا أطول — اختر متى تصرف الدقائق.</p>
+              <p className="mt-1 text-white/70">
+                أنت تقود الاستجواب. اختر سؤالًا واحدًا ثم انتظر الإشارة التي تحصل عليها. كل إجابة قد تدعم فرضيتك أو تشكك فيها.
+              </p>
+              <p className="mt-1 text-xs text-white/60">كل سؤال يستهلك وقتًا. الأسئلة التي تتحدى الفرضية قد تخفض الثقة قليلًا.</p>
             </div>
           </div>
 
@@ -90,8 +111,8 @@ export default function Interviews() {
                     <span className={selected ? "text-emerald-300" : "text-white/60"}>
                       {selectedChoice ? selectedChoice.title : "—"}
                     </span>
-                    {selectedChoice?.note && (
-                      <div className="mt-1 text-[11px] text-white/60">دفتر الملاحظات: {selectedChoice.note}</div>
+                    {selectedChoice?.notebook && (
+                      <div className="mt-1 text-[11px] text-white/60">دفتر الملاحظات: {selectedChoice.notebook}</div>
                     )}
                   </div>
                 </div>
@@ -99,12 +120,25 @@ export default function Interviews() {
                 <div className="mt-4 space-y-3">
                   {q.choices.map((c: CaseInterviewChoice) => {
                     const active = selected === c.id;
-                    const unlocked =
+                    const unlockedByEvidence =
                       !c.requiresEvidenceIds ||
                       c.requiresEvidenceIds.some((id: string) => game.hasEvidence(id));
+                    const unlockedBySql =
+                      !c.requiresSqlFlags ||
+                      c.requiresSqlFlags.some((flag) => game.sqlFlags[flag]);
+                    const unlockedByCategory =
+                      !c.requiresCategoryLean ||
+                      (leadingCategory && c.requiresCategoryLean.includes(leadingCategory));
+                    const unlocked = unlockedByEvidence && unlockedBySql && unlockedByCategory;
                     if (!unlocked) return null;
 
                     const trustChip = `${c.trustDelta >= 0 ? "+" : ""}${c.trustDelta}`;
+                    const styleCopy =
+                      c.style === "confirming"
+                        ? "إشارة داعمة"
+                        : c.style === "conflicting"
+                          ? "إشارة متعارضة"
+                          : "إشارة غامضة";
 
                     return (
                       <button
@@ -122,15 +156,14 @@ export default function Interviews() {
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70">
                               <span className="rounded-full bg-white/10 px-2 py-1">-{c.timeCostMin} دقيقة</span>
                               <span className="rounded-full bg-white/10 px-2 py-1">الثقة {trustChip}</span>
-                              {c.note && (
-                                <span className="rounded-full bg-white/10 px-2 py-1">دفتر: {c.note}</span>
-                              )}
+                              <span className="rounded-full bg-white/10 px-2 py-1">{styleCopy}</span>
                             </div>
+                            <p className="mt-2 text-sm text-white/70">{c.answer}</p>
                           </div>
 
                           <div className="text-xs text-white/60">{c.tag}</div>
                         </div>
-                        <p className="mt-2 text-xs text-white/60">لماذا يستهلك وقتًا: تفاصيل أكثر = حديث أطول.</p>
+                        <p className="mt-2 text-xs text-white/60">اسأل ثم دوّن الإشارة في الدفتر فورًا.</p>
                       </button>
                     );
                   })}
