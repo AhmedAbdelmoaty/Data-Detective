@@ -1,6 +1,13 @@
 // src/content/cases/case002.ts
 export type CaseBucket = "billing" | "product" | "marketing";
 
+export type CaseEvidenceInterpretation = {
+  id: string;
+  text: string;
+  category: "billing" | "product" | "marketing";
+  confidenceCost?: number;
+};
+
 export type CaseEvidence = {
   id: string;
   title: string;
@@ -9,6 +16,7 @@ export type CaseEvidence = {
   meaning?: string;
   why?: string;
   pointsToward?: string;
+  interpretations?: ReadonlyArray<CaseEvidenceInterpretation>;
 };
 
 export type CaseInterviewChoice = {
@@ -52,7 +60,7 @@ export const CASE002 = {
   roomObjectives: {
     hq: "اعرض شارتك، خريطة القضية، والهدف الفوري.",
     evidence:
-      "ضع ٣ أدلة على اللوحة لفتح مختبر البيانات. جمّعها حسب السبب الأرجح.",
+      "فسّر ٣ أدلة لتكوين فرضية أولية. اختر التفسير + الثقة لكل بطاقة.",
     sql: "أكمل استعلامًا بسيطًا لمقارنة الفروع واكتشاف أضعف مؤشر.",
     interviews:
       "اسأل مدير المتجر والكاشير لتأكيد أو تحدي فرضيتك.",
@@ -60,9 +68,9 @@ export const CASE002 = {
     reveal: "اعرض الخلاصة + لماذا تؤمن بها + ما الذي يجب إصلاحه.",
   },
   evidenceReason:
-    "وضع البطاقات هو فرضيتك. تجميع الأدلة حسب السبب يمنعك من ملاحقة ضجيج عشوائي.",
+    "التفسير = فرضية عمل. تجميع الإشارات تحت المخزون/النظام/التسعير يوضح أين تبحث في المختبر.",
   timeCostReason:
-    "كل وضع بطاقة يمثل مكالمة أو رسالة. الاستعجال يستهلك الوقت قبل الوصول للمختبر.",
+    "كل تفسير يمثل تحققًا سريعًا (مكالمة/رسالة). الثقة المرتفعة تستهلك وقتًا إضافيًا.",
   sqlFrame:
     "استخدم جدول sales_weekly الصغير. اختر المؤشر ورتّب لتعرف أي فرع في ورطة.",
   sqlQuery:
@@ -105,57 +113,181 @@ export const CASE002 = {
   evidence: [
     {
       id: "branch_b_stockout",
-      title: "الفرع ب: تقارير نفاد المخزون ارتفعت",
-      hint: "الرفوف فارغة في منتجات نهاية الأسبوع.",
+      title: "الفرع ب: صور رفوف شبه فارغة",
+      hint: "الموظف أرسل صورًا لمنتجات نفدت مساء الخميس والجمعة.",
       bucketHint: "billing",
-      meaning: "المنتجات الأكثر طلبًا مفقودة وقت الذروة.",
-      why: "نفاد المخزون يوقف المبيعات حتى مع وجود الطلب.",
+      meaning: "الأصناف السريعة النفاد غير متاحة في نهاية اليوم.",
+      why: "نفاد المخزون يوقف الطلب حتى لو كان الزوار موجودين.",
       pointsToward: "المخزون",
+      interpretations: [
+        {
+          id: "late_restock",
+          text: "التوريد تأخر فخسرت المبيعات المسائية",
+          category: "billing",
+        },
+        {
+          id: "system_not_sync",
+          text: "نظام الطلب الآلي لم يحدّث الكميات",
+          category: "product",
+        },
+        {
+          id: "price_shift",
+          text: "الزبائن اشتروا أقل بعد زيادة السعر فبقيت الفوارغ",
+          category: "marketing",
+        },
+      ],
     },
     {
       id: "branch_c_refunds",
-      title: "الاستردادات زادت في الفرع ج",
-      hint: "الزبائن يعيدون المشتريات بشكل أكبر.",
+      title: "الفرع ج: طابور استرداد غير معتاد",
+      hint: "المحاسب ذكر أن الناس يعيدون مشتريات بعد دقائق من الدفع.",
       bucketHint: "billing",
-      meaning: "منطقة الاسترداد مزدحمة بعد ارتباك عند الدفع.",
-      why: "ارتفاع الاستردادات قد يشير لمشكلة سعر أو دفع.",
+      meaning: "الاستردادات تقطع دورة البيع وتدل على إحباط ما.",
+      why: "قد تكون أسعار مربكة أو أجهزة دفع تعطي أخطاء متأخرة.",
       pointsToward: "التسعير",
+      interpretations: [
+        {
+          id: "price_confusion",
+          text: "الأسعار الجديدة سببت سوء فهم وطلبات استرداد",
+          category: "marketing",
+        },
+        {
+          id: "pos_voids",
+          text: "النظام يعكس بعض العمليات تلقائيًا",
+          category: "product",
+        },
+      ],
     },
     {
       id: "pos_errors",
-      title: "أخطاء نقاط البيع زادت (مدفوعات فاشلة)",
-      hint: "رفض بطاقات أكثر/إعادة تشغيل للأجهزة.",
+      title: "أخطاء نقاط البيع: إعادة تشغيل متعددة",
+      hint: "الكاشير يذكر تجمد الجهاز بعد كل ١٠-١٢ عملية.",
       bucketHint: "product",
-      meaning: "الأجهزة تتوقف أثناء الدفع.",
-      why: "المعاملات الفاشلة تعني خسارة إيراد.",
+      meaning: "التجمد يدفع الزبائن للمغادرة أو الدفع نقدًا فقط.",
+      why: "المعاملات الفاشلة = إيراد مفقود + إحباط زبائن.",
       pointsToward: "النظام",
+      interpretations: [
+        {
+          id: "software_patch",
+          text: "تحديث النظام الأخير به خطأ يعلق الطرفية",
+          category: "product",
+        },
+        {
+          id: "network_issue",
+          text: "الشبكة بطيئة بسبب ضغط المساء",
+          category: "billing",
+        },
+        {
+          id: "price_lookup",
+          text: "الطرفية تبحث عن أسعار جديدة وتتعطل",
+          category: "marketing",
+        },
+      ],
     },
     {
       id: "price_change",
-      title: "تم تغيير السعر الأسبوع الماضي",
-      hint: "بطاقات الأسعار الجديدة ظهرت يوم الثلاثاء.",
+      title: "تغيير الأسعار: بطاقات جديدة الثلاثاء",
+      hint: "الزيادة بسيطة (٣-٥٪) لكنها جاءت مع نقص عروض.",
       bucketHint: "marketing",
-      meaning: "الزبائن لاحظوا زيادة سعر بسيطة.",
-      why: "انطباع السعر يغيّر الطلب بسرعة.",
+      meaning: "العملاء لاحظوا التغيير لكن لا دليل أنه سبب وحيد.",
+      why: "السعر يحرّك الحساسية بسرعة خاصة مع أخطاء الدفع.",
       pointsToward: "التسعير",
+      interpretations: [
+        {
+          id: "elastic_demand",
+          text: "الزيادة جعلت الزبائن يشترون أقل فجأة",
+          category: "marketing",
+        },
+        {
+          id: "mixed_signal",
+          text: "الزيادة تزامنت مع نفاد مخزون فخلطت الإشارة",
+          category: "billing",
+        },
+      ],
     },
     {
       id: "foot_traffic",
-      title: "حركة الزوار مستقرة",
-      hint: "عدد الداخلين للمتجر ثابت.",
+      title: "حركة الزوار: العدّاد مستقر",
+      hint: "الكاميرات تظهر دخولًا ثابتًا، لا هبوط في الزيارات.",
       bucketHint: "marketing",
-      meaning: "لا يوجد انخفاض في الزيارات بين الفروع.",
-      why: "الحركة ليست السبب. انظر لما يحدث داخل المتجر.",
+      meaning: "المشكلة ليست قلة زوار بل ما يحدث داخل المتجر.",
+      why: "يشير إلى أن السبب داخلي (مخزون/نظام/سعر) وليس تسويقًا خارجيًا.",
       pointsToward: "النظام",
+      interpretations: [
+        {
+          id: "ops_bottleneck",
+          text: "الزوار ينتظرون عند الدفع فيغادر بعضهم",
+          category: "product",
+        },
+        {
+          id: "interest_ok",
+          text: "الطلب موجود لكن العرض مضطرب",
+          category: "billing",
+        },
+      ],
     },
     {
       id: "delivery_delay",
-      title: "تسليم المخزون تأخر",
-      hint: "الشاحنة وصلت متأخرة للفرع ب.",
+      title: "التسليم: الشاحنة وصلت متأخرة",
+      hint: "المورد تأخر نصف يوم للفرع ب صباح الجمعة.",
       bucketHint: "billing",
-      meaning: "الأصناف الأكثر مبيعًا وصلت متأخرة نصف يوم.",
-      why: "التأخير يترك الرفوف فارغة وقت الذروة.",
+      meaning: "الأصناف الشعبية وصلت بعد ذروة الظهر.",
+      why: "التأخير يعطل بيع يوم كامل في نهاية الأسبوع.",
       pointsToward: "المخزون",
+      interpretations: [
+        {
+          id: "supplier_slip",
+          text: "المورد أخطأ في الجدولة لهذه الشحنة",
+          category: "billing",
+        },
+        {
+          id: "receiving_queue",
+          text: "الفريق لم يفرّغ الشحنة سريعًا بسبب ازدحام النظام",
+          category: "product",
+        },
+      ],
+    },
+    {
+      id: "promo_poster",
+      title: "ملصق عرض قديم في الفرع أ",
+      hint: "عرض انتهى الأسبوع الماضي لكن الملصق ما زال مرفوعًا.",
+      bucketHint: "marketing",
+      meaning: "إشارة ضجيج: قد يربك بعض الزبائن لكن لا يفسر الهبوط وحده.",
+      why: "تشتيت بسيط، يساعد فقط على فهم التجربة داخل المتجر.",
+      pointsToward: "التسعير",
+      interpretations: [
+        {
+          id: "minor_confusion",
+          text: "الزبائن يقارنون أسعار الملصق بالسعر الجديد",
+          category: "marketing",
+        },
+        {
+          id: "ignored",
+          text: "الإشارة ضجيج ولا تؤثر فعليًا",
+          category: "billing",
+        },
+      ],
+    },
+    {
+      id: "sensor_noise",
+      title: "تنبيه نقص مزيف من الحساس",
+      hint: "حساس رف في الفرع ج يرسل إشعارات نفاد غير متسقة.",
+      bucketHint: "product",
+      meaning: "التنبيه قد يكون خطأ قراءة وليس نقصًا حقيقيًا.",
+      why: "يوحي بضجيج بيانات: قد يربك الطلبات لكنه ليس سببًا مباشرًا.",
+      pointsToward: "المخزون",
+      interpretations: [
+        {
+          id: "false_alarm",
+          text: "الحساس يضخم المشكلة بلا أثر كبير",
+          category: "product",
+        },
+        {
+          id: "missed_restock",
+          text: "الإشعارات المتضاربة عطلت إعادة التعبئة",
+          category: "billing",
+        },
+      ],
     },
   ] as const,
 
