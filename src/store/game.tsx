@@ -11,6 +11,12 @@ export type EvidenceCard = {
   meaning?: string;
   why?: string;
   pointsToward?: string;
+  interpretations?: typeof CASE002.evidence[number]["interpretations"];
+  interpretation?: {
+    interpretationId: string;
+    category: Bucket;
+    confidence: "low" | "medium" | "high";
+  };
   placedIn?: Bucket | null;
 };
 
@@ -20,6 +26,8 @@ export type GameState = {
   trust: "Low" | "Medium" | "High";
   trustScore: number;
   xp: number;
+  notebook: string[];
+  forcedSqlAccess: boolean;
 
   // Evidence
   cluesGoal: number;
@@ -41,6 +49,11 @@ export type GameState = {
 
   // Actions
   placeCard: (cardId: string, bucket: Bucket) => void;
+  interpretCard: (opts: {
+    cardId: string;
+    interpretationId: string;
+    confidence: "low" | "medium" | "high";
+  }) => void;
   getPlacedEvidenceIds: () => string[];
   hasEvidence: (evidenceId: string) => boolean;
   runSql: () => void;
@@ -54,6 +67,7 @@ export type GameState = {
   // Reset (support both names to avoid breaking any screen)
   resetCase: () => void;
   resetGame: () => void;
+  proceedLowConfidence: (opts: { timeCostMin: number }) => void;
 };
 
 const initialCards: EvidenceCard[] = CASE002.evidence.map((e) => ({
@@ -64,6 +78,7 @@ const initialCards: EvidenceCard[] = CASE002.evidence.map((e) => ({
   meaning: e.meaning,
   why: e.why,
   pointsToward: e.pointsToward,
+  interpretations: e.interpretations,
   placedIn: null,
 }));
 
@@ -85,7 +100,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   // ✅ State
   const [time, setTime] = useState(INITIAL_TIME);
   const [trustScore, setTrustScore] = useState(50);
+  const [notebook, setNotebook] = useState<string[]>([]);
   const [cards, setCards] = useState<EvidenceCard[]>(initialCards);
+  const [forcedSqlAccess, setForcedSqlAccess] = useState(false);
 
   const [sqlRan, setSqlRan] = useState(false);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
@@ -95,9 +112,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // ✅ Derived counts
   const placedCount = useMemo(
-    () => cards.filter((c) => Boolean(c.placedIn)).length,
+    () => cards.filter((c) => Boolean(c.interpretation)).length,
     [cards],
   );
+
+  const categoryCounts = useMemo(() => {
+    return cards.reduce<Record<Bucket, number>>(
+      (acc, card) => {
+        if (card.interpretation?.category) {
+          acc[card.interpretation.category] += 1;
+        }
+        return acc;
+      },
+      { billing: 0, product: 0, marketing: 0 },
+    );
+  }, [cards]);
 
   const interviewAnswersCount = useMemo(
     () => Object.keys(interviewAnswers).length,
@@ -110,7 +139,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   );
 
   // --- Unlock rules ---
-  const canEnterSQL = placedCount >= 3;
+  const hasCategoryConsistency = Object.values(categoryCounts).some((c) => c >= 2);
+  const canEnterSQL = (placedCount >= 3 && hasCategoryConsistency) || forcedSqlAccess;
   const canEnterInterviews = canEnterSQL && sqlRan;
   const canEnterAnalysis = canEnterInterviews && interviewAnswersCount >= 2;
   const canReveal = canEnterAnalysis && selectedInsightsCount >= 2;
@@ -122,10 +152,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const doReset = () => {
     setTime(INITIAL_TIME);
     setTrustScore(50);
-    setCards(initialCards.map((c) => ({ ...c, placedIn: null })));
+    setCards(initialCards.map((c) => ({ ...c, placedIn: null, interpretation: undefined })));
     setSqlRan(false);
     setInterviewAnswers({});
     setSelectedInsights([]);
+    setNotebook([]);
+    setForcedSqlAccess(false);
   };
 
   const value: GameState = useMemo(
@@ -135,6 +167,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       trust,
       trustScore,
       xp: 75,
+      notebook,
+      forcedSqlAccess,
 
       // Evidence
       cluesGoal: 6,
@@ -163,6 +197,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               ? {
                   ...c,
                   placedIn: bucket,
+                  interpretation: {
+                    interpretationId: "placement",
+                    category: bucket,
+                    confidence: "medium",
+                  },
                 }
               : c,
           ),
@@ -177,6 +216,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       hasEvidence: (evidenceId) =>
         cards.some((c) => c.id === evidenceId && c.placedIn != null),
+
+      interpretCard: ({ cardId, interpretationId, confidence }) => {
+        setCards((prev) =>
+          prev.map((c) => {
+            if (c.id !== cardId) return c;
+            const interpretations = c.interpretations as
+              | ReadonlyArray<{ id: string; category: Bucket; text: string }>
+              | undefined;
+            const match = interpretations?.find((i) => i.id === interpretationId);
+            if (!match) return c;
+            const confidenceCost = confidence === "high" ? 2 : 1;
+            setTime((t) => spendTime(t, confidenceCost));
+            setNotebook((notes) => [
+              ...notes,
+              `فسّرت الدليل: ${c.title} (التصنيف: ${match.category === "billing" ? "المخزون" : match.category === "product" ? "النظام" : "التسعير"}، الثقة: ${
+                confidence === "high" ? "مرتفع" : confidence === "medium" ? "متوسط" : "منخفض"
+              })`,
+            ]);
+            return {
+              ...c,
+              interpretation: {
+                interpretationId,
+                category: match.category,
+                confidence,
+              },
+              placedIn: match.category,
+            };
+          }),
+        );
+      },
 
       runSql: () => setSqlRan(true),
 
@@ -203,6 +272,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         );
       },
 
+      proceedLowConfidence: ({ timeCostMin }) => {
+        setForcedSqlAccess(true);
+        setTime((t) => spendTime(t, timeCostMin));
+      },
+
       // both are valid now ✅
       resetCase: doReset,
       resetGame: doReset,
@@ -222,6 +296,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       canEnterInterviews,
       canEnterAnalysis,
       canReveal,
+      notebook,
+      forcedSqlAccess,
     ],
   );
 

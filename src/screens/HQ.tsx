@@ -45,6 +45,24 @@ export default function HQ() {
     CASE002.interviews.map((q) => [q.id, { header: q.header, choices: q.choices }]),
   );
 
+  const interpreted = game.cards.filter((c) => c.interpretation);
+  const categoryCounts = interpreted.reduce<Record<string, number>>(
+    (acc, card) => {
+      const cat = card.interpretation?.category;
+      if (cat) acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
+  const leadingCategory = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1])[0];
+  const hypothesisSummary = leadingCategory
+    ? `المسار الأقوى: ${laneTitles[leadingCategory[0]]} (${leadingCategory[1]} إشارة)`
+    : "الفرضية الحالية غير مكتملة";
+  const hypothesisDetail = interpreted.length
+    ? `عدد التفسيرات: ${interpreted.length} · يحتاج فتح المختبر إلى ٣ تفسيرات مع اتساق.`
+    : "ابدأ بتفسير الأدلة في غرفة الأدلة.";
+  const notebookEntries = game.notebook.length ? game.notebook.slice(-3).join(" · ") : "لا ملاحظات بعد";
+
   const remainingForSQL = Math.max(3 - game.placedCount, 0);
   const remainingForAnalysis = Math.max(2 - game.interviewAnswersCount, 0);
   const remainingForReveal = Math.max(2 - game.selectedInsightsCount, 0);
@@ -152,11 +170,18 @@ export default function HQ() {
           <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
             <div className="font-semibold">معاينة دفتر الملاحظات</div>
             <ul className="mt-2 space-y-2 text-xs text-white/80 list-disc pl-4">
+              <li>ملاحظات التحقيق: {notebookEntries}</li>
               <li>الأدلة الموضوعة: {placedNotebook}</li>
               <li>إجابات الشهود: {interviewNotebook}</li>
               <li>النتائج المثبتة: {insightNotebook}</li>
             </ul>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4 text-sm text-white/80">
+          <div className="font-semibold">الفرضية الحالية</div>
+          <p className="mt-1">{hypothesisSummary}</p>
+          <p className="text-xs text-white/70 mt-1">{hypothesisDetail}</p>
         </div>
 
         <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4 text-sm text-white/80">
