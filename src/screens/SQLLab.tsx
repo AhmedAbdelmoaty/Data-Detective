@@ -16,6 +16,7 @@ const metricOptions = [
   { key: "sales", label: "sales", helper: "Compare total sales" },
   { key: "failed_txn", label: "failed_txn", helper: "See failed payments" },
   { key: "out_of_stock", label: "out_of_stock", helper: "Check stockouts" },
+  { key: "price_changed", label: "price_changed", helper: "Track price change flag" },
 ] as const;
 
 export default function SQLLab() {
@@ -23,9 +24,22 @@ export default function SQLLab() {
   const game = useGame();
   const caseData = CASE002;
 
-  const [metric, setMetric] = useState<(typeof metricOptions)[number]["key"]>("sales");
+  const defaultMetric = useMemo<(typeof metricOptions)[number]["key"]>(() => {
+    if (game.primaryHypothesis === "system") return "failed_txn";
+    if (game.primaryHypothesis === "stock") return "out_of_stock";
+    if (game.primaryHypothesis === "pricing") return "price_changed";
+    return "sales";
+  }, [game.primaryHypothesis]);
+
+  const [metric, setMetric] = useState<(typeof metricOptions)[number]["key"]>(
+    defaultMetric,
+  );
   const [direction, setDirection] = useState<"ASC" | "DESC">("ASC");
   const [result, setResult] = useState<QueryResult | null>(null);
+
+  React.useEffect(() => {
+    setMetric(defaultMetric);
+  }, [defaultMetric]);
 
   const queryTemplate = caseData.sqlQuery
     .replace("{metric}", metric)
@@ -37,7 +51,13 @@ export default function SQLLab() {
     const thisWeek = dataset.filter((row) => row.week === "this_week");
     const byMetric = thisWeek.map((row) => {
       const value =
-        metric === "sales" ? row.sales : metric === "failed_txn" ? row.failed_txn : row.out_of_stock;
+        metric === "sales"
+          ? row.sales
+          : metric === "failed_txn"
+          ? row.failed_txn
+          : metric === "out_of_stock"
+          ? row.out_of_stock
+          : Number(row.price_changed);
       return { branch: row.branch, value };
     });
 
@@ -76,6 +96,12 @@ export default function SQLLab() {
         "Branch C has the most failed transactions after the price change.",
         "C is highest, A/B are lower",
       );
+    } else if (metric === "price_changed") {
+      output = interpret(
+        "Pricing",
+        "علامة تغيير السعر شغالة في ب و ج هذا الأسبوع، تابع لو الشكاوى أو المرتجعات زادت هناك.",
+        "ب و ج مفعّلين، أ ثابت",
+      );
     } else if (metric === "sales") {
       output = interpret(
         direction === "ASC" ? "Stock" : "Pricing",
@@ -94,17 +120,28 @@ export default function SQLLab() {
   const interviewPrep = caseData.sqlInterviewPrep;
   const sqlTable = caseData.sqlResultTable;
 
+  const goalLine = useMemo(() => {
+    if (game.primaryHypothesis === "system")
+      return "هدفك الآن: ركّز على أخطاء الدفع وشوف أي فرع بيخسر معاملات.";
+    if (game.primaryHypothesis === "stock")
+      return "هدفك الآن: تتبّع النواقص والتأخير عشان تثبت إن المشكلة مخزون.";
+    if (game.primaryHypothesis === "pricing")
+      return "هدفك الآن: شوف تأثير تعديل الأسعار أو المرتجعات المرتبطة بيه.";
+    return "اختار المقياس اللي يخدم فرضيتك: مخزون؟ سيستم؟ تسعير؟";
+  }, [game.primaryHypothesis]);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white">
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold">Data Lab (SQL)</h1>
+            <h1 className="text-3xl font-semibold">معمل البيانات (SQL)</h1>
             <p className="mt-1 text-sm text-white/70">
-              Objective: complete a friendly query, choose a metric, and use the output to aim your witness questions.
+              الهدف: شغّل الاستعلام البسيط، اختار المقياس الصح، واستعمل الناتج لتوجيه الأسئلة.
             </p>
             <p className="mt-2 text-sm text-white/70">{caseData.sqlFrame}</p>
-            <p className="mt-2 text-xs text-white/60">Progress: {game.placedCount}/{game.cluesGoal} clues</p>
+            <p className="mt-2 text-xs text-white/60">التقدم: {game.placedCount}/{game.cluesGoal} أدلة</p>
+            <p className="mt-2 text-sm text-emerald-200">{goalLine}</p>
           </div>
 
           <button

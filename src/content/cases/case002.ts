@@ -8,7 +8,6 @@ export type CaseEvidence = {
   bucketHint: CaseBucket;
   meaning?: string;
   why?: string;
-  pointsToward?: string;
 };
 
 export type CaseInterviewChoice = {
@@ -41,30 +40,30 @@ export type CaseInsight = {
 
 export const CASE002 = {
   id: "case002_missing_sales",
-  title: "Case 002: Missing Sales (Retail Mystery)",
+  title: "القضية ٠٠٢: مبيعات مفقودة في سلسلة محلية",
   briefing: {
-    role: "You are the Junior Data Detective hired by the shop owner.",
+    role: "أنت المحقق البياني الصغير اللي صاحب المحل جابه للمساعدة.",
     stakes:
-      "Three neighborhood branches lost sales this week. The owner needs a clean answer by end of day.",
-    pressure: "Time = actions before the shop closes. Trust = how confident the owner is in your calls.",
-    win: "Pick the real cause + show evidence + a short fix list.",
+      "تلات فروع في الحي خسروا مبيعات الأسبوع ده. المالك عايز إجابة واضحة قبل نهاية اليوم.",
+    pressure: "الوقت = عدد التحركات قبل ما المحل يقفل. الثقة = مدى اقتناع المالك بقراراتك.",
+    win: "حدد السبب الحقيقي + الأدلة + خطة تصحيح سريعة.",
   },
   roomObjectives: {
-    hq: "See your badge, the case map, and the immediate objective.",
+    hq: "شوف البطاقة، خريطة القضية، والهدف الحالي.",
     evidence:
-      "Place 3 clues on the board to open Data Lab. Group them by the most likely cause.",
-    sql: "Complete a simple query to compare branches and spot the weakest metric.",
+      "اربط ٣ إشارات على اللوحة عشان تفتح معمل البيانات. اجمع كل إشارة تحت السبب الأقرب.",
+    sql: "شغّل استعلام بسيط يقارن الفروع ويظهر أضعف مؤشر.",
     interviews:
-      "Ask the Store Manager and Cashier to confirm or challenge your hypothesis.",
-    analysis: "Review quick charts, apply filters, and lock 2 insights in plain language.",
-    reveal: "Present the conclusion + why you believe it + what to fix next.",
+      "اسأل مدير الفرع والكاشير لتأكيد أو نفي فرضيتك.",
+    analysis: "راجع الرسوم السريعة، اختار ٢ استنتاج واضح.",
+    reveal: "اعرض النتيجة + ليه مقتنع + إيه اللي يتصلح فوراً.",
   },
   evidenceReason:
-    "Placing is your hypothesis. Grouping clues by cause keeps you from chasing random noise.",
+    "ربط الدليل هو فرضيتك. ترتيب الإشارات حسب السبب يمنعك من تتبع ضوضاء عشوائية.",
   timeCostReason:
-    "Each placement is a phone call or Slack message. Rushing burns the clock before you hit the lab.",
+    "كل ربط = مكالمة أو رسالة استفسار. الاستعجال بيحرق الوقت قبل المعمل.",
   sqlFrame:
-    "Use a tiny sales_weekly table. Choose the metric and sort to see which branch is in trouble.",
+    "استخدم جدول sales_weekly البسيط. اختار المقياس ورتبه عشان تشوف أي فرع واقع.",
   sqlQuery:
     "SELECT branch, week, SUM({metric}) AS metric_value\nFROM sales_weekly\nWHERE week IN ('this_week', 'last_week')\nGROUP BY branch, week\nORDER BY metric_value {direction};",
   sqlResultHighlights: [
@@ -91,71 +90,65 @@ export const CASE002 = {
     },
   ],
   sqlInterviewPrep: [
-    "Ask the Store Manager if deliveries slipped for Branch B.",
-    "Ask the Cashier about POS errors and price complaints.",
-    "Confirm if the price tweak confused regulars or if stock simply ran out.",
+    "اسأل مدير الفرع لو التوريد اتأخر عند فرع ب.",
+    "اسأل الكاشير عن أعطال الـPOS وشكاوى السعر.",
+    "اتأكد لو تعديل السعر لخبط الزباين أو لو البضاعة خلصت فعلاً.",
   ],
   interviewFrame:
-    "Deeper investigation takes longer. Spend time for detail or go fast for quick trust wins.",
+    "الأسئلة الأعمق تاخد وقت. قرر هتصرف الدقايق فين: تفاصيل ولا سرعة تكسب الثقة.",
   analysisFrame:
-    "Pick only the insights that directly prove the cause. Clear, simple language beats jargon.",
+    "اختار الاستنتاجات اللي بتثبت السبب مباشرة. البساطة أوضح من الكلام الكبير.",
   revealFrame:
-    "Closure = one cause, supporting clues, and a fix list the owner can act on today.",
+    "الخلاصة = سبب واحد + أدلته + خطوات تصليح يقدر المالك ينفذها النهاردة.",
 
   evidence: [
     {
       id: "branch_b_stockout",
-      title: "Branch B: Out-of-stock report increased",
-      hint: "Shelves empty on weekend items.",
+      title: "فرع ب: بلاغات نقص في الرفوف",
+      hint: "زبائن لقوا منتجات أساسية مش موجودة.",
       bucketHint: "billing",
-      meaning: "Popular SKUs missing during peak hours.",
-      why: "Missing stock blocks sales even if demand is there.",
-      pointsToward: "Stock",
+      meaning: "الرفوف فاضية في وقت الزحمة.",
+      why: "الناس عايزة تشتري لكن مفيش بضاعة، فتضيع المبيعات.",
     },
     {
       id: "branch_c_refunds",
-      title: "Refunds increased at Branch C",
-      hint: "Customers returning items more often.",
+      title: "فرع ج: المرتجعات زادت",
+      hint: "العملا بيرجعوا مشتريات أكتر من المعتاد.",
       bucketHint: "billing",
-      meaning: "Refund desk busy after checkout confusion.",
-      why: "Refund spikes can signal pricing or payment pain.",
-      pointsToward: "Pricing",
+      meaning: "الكاشير بيقضي وقت في المرتجعات.",
+      why: "الارتباك في الأسعار أو السيستم بيخلي الناس ترجع المشتريات.",
     },
     {
       id: "pos_errors",
-      title: "POS errors increased (failed payments)",
-      hint: "More card declines/terminal resets.",
+      title: "فرع ج: أعطال ماكينة الدفع",
+      hint: "ماكينة POS بتفصل وتتعمل ريستارت.",
       bucketHint: "product",
-      meaning: "Devices timing out at checkout.",
-      why: "Failed transactions mean lost revenue.",
-      pointsToward: "System",
+      meaning: "مدفوعات الكروت بتفشل في وسط اليوم.",
+      why: "عملية دفع فاشلة = بيع ضايع وعميل متضايق.",
     },
     {
       id: "price_change",
-      title: "Price changed last week",
-      hint: "New price tags rolled out on Tuesday.",
+      title: "تغيير أسعار قريب من وقت الهبوط",
+      hint: "زيادة بسيطة في منتجات أساسية.",
       bucketHint: "marketing",
-      meaning: "Customers noticed a small price bump.",
-      why: "Price perception shifts demand quickly.",
-      pointsToward: "Pricing",
+      meaning: "العملا واخدين بالهم إن الأسعار عليت فجأة.",
+      why: "الإحساس بالغلاء يخلي الناس تبطل تشتري أو تطلب خصم.",
     },
     {
       id: "foot_traffic",
-      title: "Foot traffic stable",
-      hint: "People entering the store stayed the same.",
+      title: "عدد الزوار ثابت",
+      hint: "عدد اللي داخلين المحل زي قبل كده.",
       bucketHint: "marketing",
-      meaning: "No drop in visits across branches.",
-      why: "Traffic is not the culprit. Look inside the store.",
-      pointsToward: "System",
+      meaning: "مافيش هبوط في الإقبال على الفروع.",
+      why: "الطلب موجود، يبقى المشكلة جوه: مخزون أو سيستم أو تسعير.",
     },
     {
       id: "delivery_delay",
-      title: "Inventory delivery delayed",
-      hint: "Truck arrived late for Branch B.",
+      title: "تأخر شحنة مخزون",
+      hint: "عربية التوريد اتأخرت لفرع ب.",
       bucketHint: "billing",
-      meaning: "Best-selling items arrived half a day late.",
-      why: "Late deliveries leave shelves empty during peak.",
-      pointsToward: "Stock",
+      meaning: "المنتجات الأكثر مبيعاً وصلت متأخر نص يوم.",
+      why: "التأخير بيخلي الرف فاضي في وقت البيع العالي.",
     },
   ] as const,
 

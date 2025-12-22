@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGame } from "../store/game";
 import {
@@ -17,6 +17,38 @@ export default function Interviews() {
   const answeredCount = Object.values(game.interviewAnswers).filter(Boolean).length;
   const canContinue = game.canEnterAnalysis; // interviewAnswersCount >= 2
 
+  const orderedQuestions = useMemo(() => {
+    const priority =
+      game.primaryHypothesis === "system"
+        ? ["q2_cashier", "q1_manager"]
+        : game.primaryHypothesis === "pricing"
+        ? ["q2_cashier", "q1_manager"]
+        : ["q1_manager", "q2_cashier"];
+
+    return [...questions].sort((a, b) => {
+      const aIdx = priority.indexOf(a.id);
+      const bIdx = priority.indexOf(b.id);
+      return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+    });
+  }, [game.primaryHypothesis, questions]);
+
+  const interviewFocus = useMemo(() => {
+    if (game.primaryHypothesis === "stock")
+      return "ابدأ بالأسئلة عن التوريد والنواقص لتثبت مشكلة المخزون.";
+    if (game.primaryHypothesis === "system")
+      return "ابدأ بالسؤال عن أعطال الدفع أو إعادة تشغيل أجهزة POS.";
+    if (game.primaryHypothesis === "pricing")
+      return "ركز على أسئلة تغييرات السعر والاعتراضات أو المرتجعات.";
+    return "اختر سؤالين يخلّوك تثبت أو تنفي فرضيتك.";
+  }, [game.primaryHypothesis]);
+
+  const primaryTag = useMemo(() => {
+    if (game.primaryHypothesis === "stock") return "stock";
+    if (game.primaryHypothesis === "system") return "system";
+    if (game.primaryHypothesis === "pricing") return "pricing";
+    return "";
+  }, [game.primaryHypothesis]);
+
   const handleChoice = (
     questionId: string,
     choice: { id: string; timeCostMin: number; trustDelta: number; note?: string },
@@ -34,15 +66,16 @@ export default function Interviews() {
       <div className="mx-auto w-full max-w-5xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold">Witnesses</h1>
+            <h1 className="text-3xl font-semibold">الشهود</h1>
             <p className="mt-2 text-sm text-white/70">
-              Objective: answer <b>2</b> questions to unlock <b>Analysis</b>. Deeper questions cost more Time but can raise Trust.
+              الهدف: جاوب على <b>٢</b> أسئلة لفتح التحليل. الأسئلة الأعمق تكلف وقت أكتر لكن ممكن تزود الثقة.
             </p>
-            <p className="mt-2 text-xs text-white/60">Answered: {answeredCount}/2</p>
+            <p className="mt-2 text-xs text-white/60">إجابات: {answeredCount}/2</p>
+            <p className="mt-2 text-sm text-emerald-200">{interviewFocus}</p>
             <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
-              <div className="font-semibold">Why Trust matters</div>
+              <div className="font-semibold">ليه الثقة مهمة؟</div>
               <p className="mt-1">{frameCopy}</p>
-              <p className="mt-1 text-xs text-white/60">Deeper investigation takes longer — choose when to spend the minutes.</p>
+              <p className="mt-1 text-xs text-white/60">الأسئلة المفصلة = وقت أطول. اختار اللي يدعم فرضيتك.</p>
             </div>
           </div>
 
@@ -59,9 +92,10 @@ export default function Interviews() {
         </div>
 
         <div className="mt-8 space-y-6">
-          {questions.map((q) => {
+          {orderedQuestions.map((q, idx) => {
             const selected = game.interviewAnswers[q.id];
             const selectedChoice = q.choices.find((c) => c.id === selected);
+            const isPriority = idx === 0 && !!primaryTag;
 
             return (
               <div
@@ -72,6 +106,11 @@ export default function Interviews() {
                   <div>
                     <h2 className="text-lg font-semibold">{q.header}</h2>
                     <p className="mt-1 text-sm text-white/70">{q.question}</p>
+                    {isPriority && (
+                      <div className="mt-1 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] text-emerald-100">
+                        أولوية بحسب فرضيتك
+                      </div>
+                    )}
                     {q.persona && (
                       <div className="mt-2 text-xs text-white/70">
                         <b>{q.persona.role}</b> — {q.persona.vibe}
@@ -81,7 +120,7 @@ export default function Interviews() {
                       </div>
                     )}
                     <p className="mt-2 text-xs uppercase tracking-widest text-white/40">
-                      Investigation Thread: Which answer leans Stock / System / Pricing?
+                      اختر الإجابة اللي تدعم مخزون / سيستم / تسعير حسب فرضيتك.
                     </p>
                   </div>
 
@@ -105,6 +144,9 @@ export default function Interviews() {
                     if (!unlocked) return null;
 
                     const trustChip = `${c.trustDelta >= 0 ? "+" : ""}${c.trustDelta}`;
+                    const relevant = primaryTag
+                      ? c.tag.toLowerCase().includes(primaryTag)
+                      : false;
 
                     return (
                       <button
@@ -122,6 +164,11 @@ export default function Interviews() {
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/70">
                               <span className="rounded-full bg-white/10 px-2 py-1">-{c.timeCostMin} min</span>
                               <span className="rounded-full bg-white/10 px-2 py-1">Trust {trustChip}</span>
+                              {relevant && (
+                                <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-1 text-emerald-100">
+                                  أنسب لفرضيتك
+                                </span>
+                              )}
                               {c.note && (
                                 <span className="rounded-full bg-white/10 px-2 py-1">Notebook: {c.note}</span>
                               )}
