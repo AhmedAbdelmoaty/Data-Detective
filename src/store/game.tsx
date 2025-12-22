@@ -3,8 +3,6 @@ import { CASE002 } from "../content/cases/case002";
 
 export type Bucket = "billing" | "product" | "marketing";
 
-export type PrimaryHypothesis = "stock" | "system" | "pricing" | null;
-
 export type EvidenceCard = {
   id: string;
   title: string;
@@ -12,6 +10,7 @@ export type EvidenceCard = {
   bucketHint?: Bucket;
   meaning?: string;
   why?: string;
+  pointsToward?: string;
   placedIn?: Bucket | null;
 };
 
@@ -26,9 +25,6 @@ export type GameState = {
   cluesGoal: number;
   cards: EvidenceCard[];
   placedCount: number;
-  committedEvidenceIds: string[];
-  evidenceCommitCount: number;
-  primaryHypothesis: PrimaryHypothesis;
 
   // SQL / Interviews / Analysis
   sqlRan: boolean;
@@ -45,10 +41,6 @@ export type GameState = {
 
   // Actions
   placeCard: (cardId: string, bucket: Bucket) => void;
-  commitEvidence: (
-    cardId: string,
-    bucket: Bucket,
-  ) => { success: boolean; reason?: string; primaryHypothesis: PrimaryHypothesis };
   getPlacedEvidenceIds: () => string[];
   hasEvidence: (evidenceId: string) => boolean;
   runSql: () => void;
@@ -71,6 +63,7 @@ const initialCards: EvidenceCard[] = CASE002.evidence.map((e) => ({
   bucketHint: e.bucketHint,
   meaning: e.meaning,
   why: e.why,
+  pointsToward: e.pointsToward,
   placedIn: null,
 }));
 
@@ -93,9 +86,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [time, setTime] = useState(INITIAL_TIME);
   const [trustScore, setTrustScore] = useState(50);
   const [cards, setCards] = useState<EvidenceCard[]>(initialCards);
-  const [committedEvidenceIds, setCommittedEvidenceIds] = useState<string[]>([]);
-  const [primaryHypothesis, setPrimaryHypothesis] =
-    useState<PrimaryHypothesis>(null);
 
   const [sqlRan, setSqlRan] = useState(false);
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
@@ -107,11 +97,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const placedCount = useMemo(
     () => cards.filter((c) => Boolean(c.placedIn)).length,
     [cards],
-  );
-
-  const evidenceCommitCount = useMemo(
-    () => committedEvidenceIds.length,
-    [committedEvidenceIds],
   );
 
   const interviewAnswersCount = useMemo(
@@ -133,78 +118,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const trust: GameState["trust"] =
     trustScore < 40 ? "Low" : trustScore < 70 ? "Medium" : "High";
 
-  const commitEvidence = (cardId: string, bucket: Bucket) => {
-    const alreadyCommitted = committedEvidenceIds.includes(cardId);
-
-    if (!alreadyCommitted && committedEvidenceIds.length >= 3) {
-      return {
-        success: false,
-        reason: "limit",
-        primaryHypothesis,
-      } as const;
-    }
-
-    let updatedHypothesis: PrimaryHypothesis = primaryHypothesis;
-
-    setCards((prev) => {
-      const next = prev.map((c) =>
-        c.id === cardId
-          ? {
-              ...c,
-              placedIn: bucket,
-            }
-          : c,
-      );
-      updatedHypothesis = computePrimaryHypothesis(next);
-      return next;
-    });
-
-    if (!alreadyCommitted) {
-      setCommittedEvidenceIds((prev) => [...prev, cardId]);
-      setTime((t) => spendTime(t, 1));
-    }
-
-    setPrimaryHypothesis(updatedHypothesis);
-
-    return { success: true, primaryHypothesis: updatedHypothesis } as const;
-  };
-
   // ✅ one reset implementation used by both resetCase & resetGame
   const doReset = () => {
     setTime(INITIAL_TIME);
     setTrustScore(50);
     setCards(initialCards.map((c) => ({ ...c, placedIn: null })));
-    setCommittedEvidenceIds([]);
-    setPrimaryHypothesis(null);
     setSqlRan(false);
     setInterviewAnswers({});
     setSelectedInsights([]);
-  };
-
-  const computePrimaryHypothesis = (nextCards: EvidenceCard[]): PrimaryHypothesis => {
-    const tally = nextCards.reduce(
-      (acc, card) => {
-        if (!card.placedIn) return acc;
-        acc[card.placedIn] = (acc[card.placedIn] || 0) + 1;
-        return acc;
-      },
-      {} as Partial<Record<Bucket, number>>,
-    );
-
-    const pairs: Array<{ bucket: Bucket; count: number }> = (
-      Object.keys(tally) as Bucket[]
-    ).map((bucket) => ({ bucket, count: tally[bucket] ?? 0 }));
-
-    pairs.sort((a, b) => b.count - a.count);
-    if (pairs.length === 0) return null;
-    if (pairs.length > 1 && pairs[0].count === pairs[1].count) return null;
-
-    const top = pairs[0]?.bucket;
-    if (!top) return null;
-    if (top === "billing") return "stock";
-    if (top === "product") return "system";
-    if (top === "marketing") return "pricing";
-    return null;
   };
 
   const value: GameState = useMemo(
@@ -219,9 +140,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       cluesGoal: 6,
       cards,
       placedCount,
-      committedEvidenceIds,
-      evidenceCommitCount,
-      primaryHypothesis,
 
       // SQL / Interviews / Analysis
       sqlRan,
@@ -239,10 +157,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       // Actions
       placeCard: (cardId, bucket) => {
-        commitEvidence(cardId, bucket);
-      },
+        setCards((prev) =>
+          prev.map((c) =>
+            c.id === cardId
+              ? {
+                  ...c,
+                  placedIn: bucket,
+                }
+              : c,
+          ),
+        );
 
-      commitEvidence,
+        // ✅ spend 1 minute per evidence placement
+        setTime((t) => spendTime(t, 1));
+      },
 
       getPlacedEvidenceIds: () =>
         cards.filter((c) => c.placedIn != null).map((c) => c.id),
@@ -294,9 +222,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       canEnterInterviews,
       canEnterAnalysis,
       canReveal,
-      committedEvidenceIds,
-      evidenceCommitCount,
-      primaryHypothesis,
     ],
   );
 
