@@ -25,6 +25,16 @@ export default function Reveal() {
   const caseData = CASE002;
   const insightLibrary = caseData.insights as ReadonlyArray<CaseInsight>;
   const interviewQuestions = caseData.interviews as ReadonlyArray<CaseInterviewQuestion>;
+  const laneNames: Record<string, string> = {
+    billing: "المخزون",
+    product: "النظام",
+    marketing: "التسعير",
+  };
+  const suspectLabels: Record<Suspect, string> = {
+    Stock: "المخزون",
+    System: "النظام",
+    Pricing: "التسعير",
+  };
 
   const placed = game.cards.filter((c) => c.placedIn);
   const insights = game.selectedInsights ?? [];
@@ -41,7 +51,9 @@ export default function Reveal() {
     };
 
     for (const c of placed) {
-      evidenceNotesList.push(`${c.title}${c.placedIn ? ` → placed under ${c.placedIn}` : ""}`);
+      evidenceNotesList.push(
+        `${c.title}${c.placedIn ? ` → موضوعة تحت ${laneNames[c.placedIn] ?? c.placedIn}` : ""}`,
+      );
       switch (c.id) {
         case "branch_b_stockout":
         case "delivery_delay":
@@ -112,72 +124,78 @@ export default function Reveal() {
   const pickEnding = (): Ending => {
     if (!top || top.v === 0) {
       return {
-        title: "Signals unclear",
-        summary: "Clues are too thin to call a cause yet.",
+        title: "الإشارات غير واضحة",
+        summary: "الأدلة ضعيفة لنداء سبب محدد حتى الآن.",
         confidenceLabel: "Low",
-        why: ["Scores for all suspects are tied or empty."],
+        why: ["النقاط لكل المشتبهين متساوية أو فارغة."],
         nextActions: [
-          "Place more evidence and ensure each clue sits under Stock/System/Pricing.",
-          "Run the Data Lab with a different metric (failed_txn or out_of_stock).",
-          "Ask both witnesses to get at least two answers.",
+          "ضع مزيدًا من الأدلة وتأكد أن كل بطاقة تحت مخزون/نظام/تسعير.",
+          "شغّل مختبر البيانات بمؤشر مختلف (المعاملات الفاشلة أو نفاد المخزون).",
+          "اسأل الشاهدين لتحصل على إجابتين على الأقل.",
         ],
       };
     }
 
     if (top.k === "Stock") {
       return {
-        title: "Most likely cause: Stock outage at Branch B",
-        summary: "Sales dropped where shelves were empty. Out-of-stock flags and delayed delivery point to inventory gaps.",
+        title: "السبب الأرجح: نفاد مخزون في الفرع ب",
+        summary: "المبيعات هبطت حيث كانت الرفوف فارغة. إشارات نفاد المخزون وتأخر التسليم تشير لفجوات المخزون.",
         confidenceLabel,
         why: [
-          "Branch B stockout and delivery delay surfaced in evidence.",
-          "Sales chart shows Branch B lagging while traffic is stable.",
-          "Witness notes mention missed delivery or customers leaving when items were missing.",
+          "نفاد المخزون وتأخر التسليم في الفرع ب ظهرت في الأدلة.",
+          "رسم المبيعات يوضح تأخر الفرع ب مع حركة مستقرة.",
+          "ملاحظات الشهود تشير لتأخر الشحنة أو مغادرة الزبائن عند فقد الأصناف.",
         ],
         nextActions: [
-          "Expedite replenishment for Branch B and set a shelf check at opening.",
-          "Add a daily stockout alert on fast movers (simple spreadsheet works).",
-          "After refill, re-run sales vs out_of_stock to confirm recovery.",
+          "سرّع إعادة التوريد للفرع ب وضع فحص رفوف عند الافتتاح.",
+          "أضف تنبيهًا يوميًا لنفاد المخزون على السلع السريعة (جدول بسيط يكفي).",
+          "بعد التعويض، أعد تشغيل المبيعات مقابل نفاد المخزون للتأكد من التعافي.",
         ],
       };
     }
 
     if (top.k === "System") {
       return {
-        title: "Most likely cause: POS / system failures",
-        summary: "Failed transactions and device resets are blocking payments, especially at Branch C.",
+        title: "السبب الأرجح: أعطال نقاط البيع / النظام",
+        summary: "المعاملات الفاشلة وإعادة تشغيل الأجهزة تعيق المدفوعات، خصوصًا في الفرع ج.",
         confidenceLabel,
         why: [
-          "POS errors evidence placed under System.",
-          "Failed_txn metric ranks Branch C highest.",
-          "Witness mentions reboots or card timeouts.",
+          "أدلة أخطاء نقاط البيع موضوعة تحت النظام.",
+          "مؤشر المعاملات الفاشلة يضع الفرع ج في الصدارة.",
+          "الشهود يذكرون إعادة التشغيل أو انتهاء وقت البطاقات.",
         ],
         nextActions: [
-          "Reboot/patch the POS at Branch C and monitor failed_txn for the next hour.",
-          "Set a simple retry/backup payment option while fixing devices.",
-          "Re-run the Data Lab on failed_txn after the patch to confirm drop.",
+          "أعد تشغيل/تحديث نقاط البيع في الفرع ج وراقب المعاملات الفاشلة للساعة القادمة.",
+          "ضع خيار دفع احتياطي بسيط أثناء إصلاح الأجهزة.",
+          "أعد تشغيل مختبر البيانات على المعاملات الفاشلة بعد الإصلاح لتأكيد الانخفاض.",
         ],
       };
     }
 
     return {
-      title: "Most likely cause: Pricing pushback",
-      summary: "Refunds and complaints spike after the price change, hurting sales at Branch C.",
+      title: "السبب الأرجح: رفض التسعير",
+      summary: "الاستردادات والشكاوى ارتفعت بعد تغيير السعر مما أضر بمبيعات الفرع ج.",
       confidenceLabel,
       why: [
-        "Price change and refunds evidence grouped under Pricing.",
-        "Witness mentions customer questions about new prices.",
-        "Sales remain stable where prices didn’t shock regulars.",
+        "أدلة تغيير السعر والاستردادات مجمعة تحت التسعير.",
+        "الشهود يذكرون أسئلة الزبائن حول الأسعار الجديدة.",
+        "المبيعات مستقرة حيث لم تصدم الأسعار الزبائن الدائمين.",
       ],
       nextActions: [
-        "Clarify price tags and signage; honor old price for confused customers today.",
-        "Track refunds tomorrow after the clarification to see if they drop.",
-        "If refunds stay high, roll back the increase for core items.",
+        "وضّح بطاقات الأسعار واللافتات؛ احترم السعر القديم للزبائن المرتبكين اليوم.",
+        "تتبع الاستردادات غدًا بعد التوضيح لترى إن كانت ستنخفض.",
+        "إذا بقيت الاستردادات مرتفعة، أعد السعر السابق للمنتجات الأساسية.",
       ],
     };
   };
 
   const ending = pickEnding();
+  const confidenceDisplay =
+    ending.confidenceLabel === "High"
+      ? "مرتفعة"
+      : ending.confidenceLabel === "Medium"
+        ? "متوسطة"
+        : "منخفضة";
 
   const supporting: string[] = [
     ...evidenceNotes,
@@ -186,27 +204,25 @@ export default function Reveal() {
   ].filter(Boolean);
 
   const recoveryChecklist = [
-    "Collect or reposition at least one more clue if lanes look empty.",
-    "Rerun the query with another metric (try failed_txn vs out_of_stock).",
-    "Ask the witness you skipped to boost confidence.",
+    "اجمع أو أعد وضع دليل واحد إضافي إذا كانت المسارات فارغة.",
+    "أعد تشغيل الاستعلام بمؤشر آخر (جرّب المعاملات الفاشلة مقابل نفاد المخزون).",
+    "اسأل الشاهد الذي تخطيته لرفع الثقة.",
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white">
-      <div className="mx-auto w-full max-w-5xl px-6 py-10">
+    <div className="min-h-screen bg-gradient-to-b from-[#061021] via-[#050b14] to-black text-white" dir="rtl">
+      <div className="mx-auto w-full max-w-5xl px-6 py-10 text-right">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-semibold">Reveal</h1>
-            <p className="mt-2 text-sm text-white/70">
-              Objective: present the cause, evidence, and confidence. This is your story for the shop owner.
-            </p>
+            <h1 className="text-3xl font-semibold">كشف الحقيقة</h1>
+            <p className="mt-2 text-sm text-white/70">الهدف: اعرض السبب، الأدلة، ومستوى الثقة. هذه قصتك لصاحب المتجر.</p>
           </div>
 
           <button
             onClick={() => nav("/hq")}
             className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
           >
-            Back to HQ
+            رجوع إلى المقر
           </button>
         </div>
 
@@ -216,26 +232,26 @@ export default function Reveal() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Time</div>
+            <div className="text-xs text-white/60">الوقت</div>
             <div className="text-lg font-semibold">{game.time}</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Trust</div>
+            <div className="text-xs text-white/60">الثقة</div>
             <div className="text-lg font-semibold">{game.trust}</div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs text-white/60">Confidence</div>
-            <div className="text-lg font-semibold">{ending.confidenceLabel}</div>
+            <div className="text-xs text-white/60">مستوى الثقة</div>
+            <div className="text-lg font-semibold">{confidenceDisplay}</div>
           </div>
         </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-black/30 p-6">
-          <div className="text-xs uppercase tracking-widest text-white/50">Detective conclusion</div>
+          <div className="text-xs uppercase tracking-widest text-white/50">خلاصة المحقق</div>
           <h2 className="mt-2 text-2xl font-semibold">{ending.title}</h2>
           <p className="mt-2 text-white/80">{ending.summary}</p>
           <div className="mt-4 grid gap-3 md:grid-cols-2">
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
-              <div className="text-xs text-emerald-200 uppercase tracking-widest">Why</div>
+              <div className="text-xs text-emerald-200 uppercase tracking-widest">لماذا</div>
               <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/80">
                 {ending.why.map((item) => (
                   <li key={item}>{item}</li>
@@ -243,7 +259,7 @@ export default function Reveal() {
               </ul>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div className="text-xs uppercase tracking-widest text-white/60">Next actions</div>
+              <div className="text-xs uppercase tracking-widest text-white/60">الخطوات التالية</div>
               <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/80">
                 {ending.nextActions.map((item) => (
                   <li key={item}>{item}</li>
@@ -255,7 +271,7 @@ export default function Reveal() {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs uppercase tracking-widest text-white/60">Supporting evidence</div>
+            <div className="text-xs uppercase tracking-widest text-white/60">الأدلة الداعمة</div>
             {supporting.length ? (
               <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-white/80">
                 {supporting.map((item) => (
@@ -263,20 +279,20 @@ export default function Reveal() {
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-sm text-white/70">No evidence recorded. Consider placing clues and answering witnesses.</p>
+              <p className="mt-2 text-sm text-white/70">لا توجد أدلة مسجلة. ضع الأدلة وأجب أسئلة الشهود.</p>
             )}
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="text-xs uppercase tracking-widest text-white/60">Notebook</div>
+            <div className="text-xs uppercase tracking-widest text-white/60">دفتر الملاحظات</div>
             <ul className="mt-2 space-y-2 list-disc pl-5 text-xs text-white/70">
-              <li>Placed clues: {game.placedCount}/{game.cluesGoal}</li>
-              <li>Witness answers: {Object.keys(interviewAnswers).length}</li>
-              <li>Insights: {game.selectedInsights.length}</li>
+              <li>الأدلة الموضوعة: {game.placedCount}/{game.cluesGoal}</li>
+              <li>إجابات الشهود: {Object.keys(interviewAnswers).length}</li>
+              <li>النتائج: {game.selectedInsights.length}</li>
             </ul>
             {ending.confidenceLabel === "Low" && (
               <div className="mt-3 rounded-xl border border-amber-400/30 bg-amber-400/10 p-3 text-xs text-amber-100">
-                <div className="font-semibold text-amber-200">Recovery checklist</div>
+                <div className="font-semibold text-amber-200">قائمة التعافي</div>
                 <ul className="mt-1 list-disc space-y-1 pl-5">
                   {recoveryChecklist.map((item) => (
                     <li key={item}>{item}</li>
@@ -292,9 +308,9 @@ export default function Reveal() {
             onClick={() => nav("/analysis")}
             className="text-sm text-white/80 hover:text-white"
           >
-            ← Back to Analysis
+            ← رجوع إلى التحليل
           </button>
-          <div className="text-xs text-white/60">Confidence rationale: scores {ranked.map((r) => `${r.k}:${r.v}`).join(" · ")}</div>
+          <div className="text-xs text-white/60">مبرر الثقة: الدرجات {ranked.map((r) => `${suspectLabels[r.k] ?? r.k}:${r.v}`).join(" · ")}</div>
         </div>
       </div>
     </div>
