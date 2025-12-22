@@ -40,6 +40,7 @@ export type GameState = {
   sqlFlags: Record<string, boolean>;
   interviewAnswers: Record<string, string>;
   selectedInsights: string[];
+  forcedAnalysisAccess: boolean;
 
   // Derived unlocks
   interviewAnswersCount: number;
@@ -70,8 +71,10 @@ export type GameState = {
   applyInterviewChoiceEffects: (opts: {
     timeCostMin: number;
     trustDelta: number;
+    note?: string;
   }) => void;
   toggleInsight: (insightId: string, max?: number) => void;
+  forceAnalysisAccess: (opts: { timeCostMin: number; trustDelta?: number; note?: string }) => void;
 
   // Reset (support both names to avoid breaking any screen)
   resetCase: () => void;
@@ -124,6 +127,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     {},
   );
   const [selectedInsights, setSelectedInsights] = useState<string[]>([]);
+  const [forcedAnalysisAccess, setForcedAnalysisAccess] = useState(false);
 
   // ✅ Derived counts
   const placedCount = useMemo(
@@ -157,7 +161,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const hasCategoryConsistency = Object.values(categoryCounts).some((c) => c >= 2);
   const canEnterSQL = (placedCount >= 3 && hasCategoryConsistency) || forcedSqlAccess;
   const canEnterInterviews = canEnterSQL && sqlRan;
-  const canEnterAnalysis = canEnterInterviews && interviewAnswersCount >= 2;
+  const canEnterAnalysis =
+    canEnterInterviews && (interviewAnswersCount >= 2 || forcedAnalysisAccess);
   const canReveal = canEnterAnalysis && selectedInsightsCount >= 2;
 
   const trust: GameState["trust"] =
@@ -173,6 +178,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSqlFlags({});
     setInterviewAnswers({});
     setSelectedInsights([]);
+    setForcedAnalysisAccess(false);
     setNotebook([]);
     setForcedSqlAccess(false);
   };
@@ -198,6 +204,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlFlags,
       interviewAnswers,
       selectedInsights,
+      forcedAnalysisAccess,
 
       // Derived
       interviewAnswersCount,
@@ -301,11 +308,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         });
       },
 
-      applyInterviewChoiceEffects: ({ timeCostMin, trustDelta }) => {
+      applyInterviewChoiceEffects: ({ timeCostMin, trustDelta, note }) => {
         setTime((t) => spendTime(t, timeCostMin));
         setTrustScore((prev) =>
           Math.min(100, Math.max(0, prev + trustDelta * 10)),
         );
+        if (note) {
+          setNotebook((prev) => [...prev, note]);
+        }
+      },
+
+      forceAnalysisAccess: ({ timeCostMin, trustDelta = 0, note }) => {
+        setForcedAnalysisAccess(true);
+        setTime((t) => spendTime(t, timeCostMin));
+        if (trustDelta !== 0) {
+          setTrustScore((prev) =>
+            Math.min(100, Math.max(0, prev + trustDelta * 10)),
+          );
+        }
+        if (note) {
+          setNotebook((prev) => [...prev, note]);
+        }
       },
 
       proceedLowConfidence: ({ timeCostMin }) => {
@@ -336,6 +359,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlInterpretation,
       sqlFlags,
       forcedSqlAccess,
+      forcedAnalysisAccess,
     ],
   );
 
