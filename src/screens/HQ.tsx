@@ -97,10 +97,10 @@ export default function HQ() {
         .join(" · ")
     : "لا توجد إجابات شهود بعد";
 
-  const insightNotebook = game.selectedInsights.length
-    ? game.selectedInsights
-        .map((id) => insightTitles.get(id) ?? id)
-        .join(", ")
+  const insightNotebook = game.lockedInsights.length
+    ? game.lockedInsights
+        .map((ins) => insightTitles.get(ins.id) ?? ins.text)
+        .join(" ، ")
     : "لم تُحدد أي نتائج بعد";
 
   return (

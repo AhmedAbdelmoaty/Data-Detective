@@ -20,6 +20,39 @@ export type EvidenceCard = {
   placedIn?: Bucket | null;
 };
 
+export type LockedInsight = {
+  id: string;
+  text: string;
+  source: "chart" | "table";
+  meta: {
+    branch?: string;
+    metric?: string;
+    week?: string;
+    note?: string;
+  };
+};
+
+export type ReportDraft = {
+  cause?: "المخزون" | "النظام" | "التسعير";
+  branch?: string;
+  evidenceIds?: string[];
+  evidenceTexts?: string[];
+  summary?: string;
+};
+
+export type SubmittedReport = {
+  cause: "المخزون" | "النظام" | "التسعير";
+  branch: string;
+  evidenceIds: string[];
+  evidenceTexts: string[];
+  summary: string;
+  confidence: {
+    score: number;
+    label: "مرتفع" | "متوسط" | "منخفض";
+    feedback?: string;
+  };
+};
+
 export type GameState = {
   // HUD
   time: string;
@@ -39,8 +72,11 @@ export type GameState = {
   sqlInterpretation?: { questionId: string; interpretationId: string; flag: string } | null;
   sqlFlags: Record<string, boolean>;
   interviewAnswers: Record<string, string>;
+  lockedInsights: LockedInsight[];
   selectedInsights: string[];
   forcedAnalysisAccess: boolean;
+  reportDraft?: ReportDraft;
+  submittedReport?: SubmittedReport;
 
   // Derived unlocks
   interviewAnswersCount: number;
@@ -73,7 +109,12 @@ export type GameState = {
     trustDelta: number;
     note?: string;
   }) => void;
+  lockInsight: (insight: LockedInsight, max?: number) => { ok: boolean; reason?: string };
+  removeLockedInsight: (insightId: string) => void;
+  clearLockedInsights: () => void;
   toggleInsight: (insightId: string, max?: number) => void;
+  saveReportDraft: (draft: ReportDraft) => void;
+  submitReport: (report: SubmittedReport) => void;
   forceAnalysisAccess: (opts: { timeCostMin: number; trustDelta?: number; note?: string }) => void;
 
   // Reset (support both names to avoid breaking any screen)
@@ -126,8 +167,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>(
     {},
   );
-  const [selectedInsights, setSelectedInsights] = useState<string[]>([]);
+  const [lockedInsights, setLockedInsights] = useState<LockedInsight[]>([]);
+  const selectedInsights = useMemo(
+    () => lockedInsights.map((li) => li.id),
+    [lockedInsights],
+  );
   const [forcedAnalysisAccess, setForcedAnalysisAccess] = useState(false);
+  const [reportDraft, setReportDraft] = useState<ReportDraft | undefined>();
+  const [submittedReport, setSubmittedReport] = useState<SubmittedReport | undefined>();
 
   // ✅ Derived counts
   const placedCount = useMemo(
@@ -153,8 +200,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   );
 
   const selectedInsightsCount = useMemo(
-    () => selectedInsights.length,
-    [selectedInsights],
+    () => lockedInsights.length,
+    [lockedInsights],
   );
 
   // --- Unlock rules ---
@@ -177,10 +224,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSqlInterpretation(null);
     setSqlFlags({});
     setInterviewAnswers({});
-    setSelectedInsights([]);
+    setLockedInsights([]);
     setForcedAnalysisAccess(false);
     setNotebook([]);
     setForcedSqlAccess(false);
+    setReportDraft(undefined);
+    setSubmittedReport(undefined);
   };
 
   const value: GameState = useMemo(
@@ -203,8 +252,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlInterpretation,
       sqlFlags,
       interviewAnswers,
+      lockedInsights,
       selectedInsights,
       forcedAnalysisAccess,
+      reportDraft,
+      submittedReport,
 
       // Derived
       interviewAnswersCount,
@@ -299,12 +351,59 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         }));
       },
 
+      lockInsight: (insight, max = 2) => {
+        let reason: string | undefined;
+        let added = false;
+        setLockedInsights((prev) => {
+          const duplicate = prev.find(
+            (p) =>
+              p.meta.branch === insight.meta.branch &&
+              p.meta.metric === insight.meta.metric &&
+              p.meta.week === insight.meta.week,
+          );
+          if (duplicate) {
+            reason = "تم اعتماد هذا الاستنتاج مسبقًا.";
+            return prev;
+          }
+          if (prev.length >= max) {
+            reason = "يمكن اعتماد استنتاجين فقط. احذف واحدًا لإضافة جديد.";
+            return prev;
+          }
+          added = true;
+          return [...prev, insight];
+        });
+        return { ok: added, reason };
+      },
+
+      removeLockedInsight: (insightId) => {
+        setLockedInsights((prev) => prev.filter((i) => i.id !== insightId));
+      },
+
+      clearLockedInsights: () => setLockedInsights([]),
+
       toggleInsight: (insightId, max = 2) => {
-        setSelectedInsights((prev) => {
-          const has = prev.includes(insightId);
-          if (has) return prev.filter((x) => x !== insightId);
-          if (prev.length >= max) return prev; // block extra picks
-          return [...prev, insightId];
+        // legacy support: treat as a simple text insight without meta
+        setLockedInsights((prev) => {
+          const exists = prev.find((i) => i.id === insightId);
+          if (exists) return prev.filter((i) => i.id !== insightId);
+          if (prev.length >= max) return prev;
+          return [
+            ...prev,
+            { id: insightId, text: insightId, source: "chart", meta: {} },
+          ];
+        });
+      },
+
+      saveReportDraft: (draft) => setReportDraft(draft),
+
+      submitReport: (report) => {
+        setSubmittedReport(report);
+        setReportDraft({
+          cause: report.cause,
+          branch: report.branch,
+          evidenceIds: report.evidenceIds,
+          evidenceTexts: report.evidenceTexts,
+          summary: report.summary,
         });
       },
 
@@ -349,6 +448,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlRan,
       interviewAnswers,
       selectedInsights,
+      lockedInsights,
       interviewAnswersCount,
       selectedInsightsCount,
       canEnterSQL,
@@ -360,6 +460,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       sqlFlags,
       forcedSqlAccess,
       forcedAnalysisAccess,
+      reportDraft,
+      submittedReport,
     ],
   );
 
